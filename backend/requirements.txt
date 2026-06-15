@@ -1,0 +1,7 @@
+Flask==3.0.3
+Flask-Cors==4.0.1
+supabase==2.5.0
+python-dotenv==1.0.1
+RouterOS-api==0.17.0
+requests==2.31.0
+gunicorn==21.2.0
