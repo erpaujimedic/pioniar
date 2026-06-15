@@ -24,7 +24,17 @@ export default function HotspotLogin() {
     
     // Redirect to submit.html (hosted on Mikrotik) to perform native POST
     const dstUrl = encodeURIComponent('https://pioniar.web.app/?status=success');
-    window.location.href = `http://192.168.100.1/submit.html?username=${username}&password=${passValue}&dst=${dstUrl}`;
+    
+    // Ambil alamat asli Hotspot dari URL, kalau gak ada baru pakai 192.168.100.1
+    let loginUrl = searchParams.get('loginUrl');
+    let target = loginUrl ? loginUrl.replace('/login', '/submit.html') : 'http://192.168.100.1/submit.html';
+    
+    // Pastikan kalau pakai HTTPS, ubah ke HTTP (karena hotspot lokal biasanya HTTP)
+    if (target.startsWith('https://')) {
+        target = target.replace('https://', 'http://');
+    }
+    
+    window.location.href = `${target}?username=${username}&password=${passValue}&dst=${dstUrl}`;
   };
 
   return (
