@@ -10,6 +10,7 @@ import threading
 class MikrotikService:
     def __init__(self):
         self.host = os.getenv("MIKROTIK_IP", "192.168.100.1")
+        self.port = int(os.getenv("MIKROTIK_PORT", 8728))
         self.username = os.getenv("MIKROTIK_USER", "admin")
         self.password = os.getenv("MIKROTIK_PASSWORD", "")
         self.pool = None
@@ -22,6 +23,7 @@ class MikrotikService:
                 self.host,
                 username=self.username,
                 password=self.password,
+                port=self.port,
                 plaintext_login=True
             )
 
