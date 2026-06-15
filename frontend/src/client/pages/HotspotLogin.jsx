@@ -10,31 +10,11 @@ export default function HotspotLogin() {
     e.preventDefault();
     if (!username) return;
     
-    // Membuat form tersembunyi untuk dikirim (POST) ke MikroTik Hotspot
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'http://192.168.100.1/login';
-    
-    const userField = document.createElement('input');
-    userField.type = 'hidden';
-    userField.name = 'username';
-    userField.value = username;
-    
-    const passField = document.createElement('input');
-    passField.type = 'hidden';
-    passField.name = 'password';
-    
     // Logika Pintar: Kalau mode voucher, password otomatis ngikutin kode voucher
-    if (loginMode === 'voucher') {
-      passField.value = username;
-    } else {
-      passField.value = password;
-    }
+    const passValue = loginMode === 'voucher' ? username : password;
     
-    form.appendChild(userField);
-    form.appendChild(passField);
-    document.body.appendChild(form);
-    form.submit();
+    // Gunakan redirect GET ke HTTP Mikrotik untuk menghindari blokir Mixed Content (HTTPS -> HTTP POST)
+    window.location.href = `http://192.168.100.1/login?username=${username}&password=${passValue}`;
   };
 
   return (
