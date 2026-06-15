@@ -22,8 +22,8 @@ export default function HotspotLogin() {
     
     const passValue = loginMode === 'voucher' ? username : password;
     
-    // Redirect to Mikrotik login, and instruct Mikrotik to send user back to /portal upon success
-    const dstUrl = encodeURIComponent('https://pioniar.web.app/portal');
+    // Redirect to Mikrotik login, and instruct Mikrotik to send user back to Landing Page upon success
+    const dstUrl = encodeURIComponent('https://pioniar.web.app/?status=success');
     window.location.href = `http://192.168.100.1/login?username=${username}&password=${passValue}&dst=${dstUrl}`;
   };
 

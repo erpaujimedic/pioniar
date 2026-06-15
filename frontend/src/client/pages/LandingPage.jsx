@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Lock, Wifi, Hexagon, Coffee, Activity, Users, Zap, Clock, UserCheck } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Lock, Wifi, Hexagon, Coffee, Activity, Users, Zap, Clock, UserCheck, CheckCircle2 } from 'lucide-react';
 
 export default function LandingPage() {
+  const [searchParams] = useSearchParams();
+  const [showSuccess, setShowSuccess] = useState(false);
   const [monitorData, setMonitorData] = useState({
     active_users: 0,
     speed_mbps: 0.0,
     uptime: "00:00:00",
     latest_login: "Belum ada"
   });
+
+  useEffect(() => {
+    if (searchParams.get('status') === 'success') {
+      setShowSuccess(true);
+      // Auto hide setelah 10 detik
+      setTimeout(() => setShowSuccess(false), 10000);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchMonitorData = async () => {
@@ -44,6 +54,22 @@ export default function LandingPage() {
       overflow: 'hidden'
     }}>
       
+      {/* Success Notification Banner */}
+      {showSuccess && (
+        <div className="animate-slide-up" style={{
+          position: 'absolute', top: '1.5rem', left: '50%', transform: 'translateX(-50%)',
+          backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '0.5rem',
+          padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem',
+          boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.2)', zIndex: 50, width: '90%', maxWidth: '500px'
+        }}>
+          <CheckCircle2 color="#10b981" size={24} />
+          <div>
+            <h4 style={{ margin: 0, color: '#065f46', fontSize: '1rem', fontWeight: 700 }}>Akses Internet Terbuka!</h4>
+            <p style={{ margin: 0, color: '#047857', fontSize: '0.85rem', marginTop: '0.2rem' }}>Selamat berselancar di Pioniar Network.</p>
+          </div>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="animate-slide-up landing-title" style={{ textAlign: 'center', marginTop: '1rem' }}>
         <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', color: '#0f172a', lineHeight: 1.1, margin: 0, letterSpacing: '-0.02em', fontWeight: 800 }}>
