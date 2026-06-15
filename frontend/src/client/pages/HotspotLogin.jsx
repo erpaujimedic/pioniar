@@ -1,20 +1,30 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 
 export default function HotspotLogin() {
+  const [searchParams] = useSearchParams();
   const [loginMode, setLoginMode] = useState('voucher'); // 'voucher' atau 'member'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      setErrorMsg(error);
+    }
+  }, [searchParams]);
 
   const handleLogin = (e) => {
     e.preventDefault();
     if (!username) return;
     
-    // Logika Pintar: Kalau mode voucher, password otomatis ngikutin kode voucher
     const passValue = loginMode === 'voucher' ? username : password;
     
-    // Gunakan redirect GET ke HTTP Mikrotik untuk menghindari blokir Mixed Content (HTTPS -> HTTP POST)
-    window.location.href = `http://192.168.100.1/login?username=${username}&password=${passValue}`;
+    // Redirect to Mikrotik login, and instruct Mikrotik to send user back to /portal upon success
+    const dstUrl = encodeURIComponent('https://pioniar.web.app/portal');
+    window.location.href = `http://192.168.100.1/login?username=${username}&password=${passValue}&dst=${dstUrl}`;
   };
 
   return (
@@ -52,6 +62,14 @@ export default function HotspotLogin() {
             PIONIAR <span style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NETWORK</span>
           </span>
         </div>
+
+        {/* Error Alert */}
+        {errorMsg && (
+          <div style={{ backgroundColor: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '0.75rem 1rem', marginBottom: '1.5rem', borderRadius: '0.375rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+            <AlertCircle color="#ef4444" size={18} style={{ marginTop: '0.1rem' }} />
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#b91c1c', fontWeight: 500 }}>{errorMsg}</p>
+          </div>
+        )}
 
         {/* Toggle Mode */}
         <div style={{ display: 'flex', backgroundColor: '#f1f5f9', borderRadius: '0.5rem', padding: '0.3rem', marginBottom: '1.5rem' }}>
