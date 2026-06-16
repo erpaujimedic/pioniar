@@ -81,7 +81,7 @@ export default function WifiManager() {
     setIsGenerating(true);
     
     try {
-      const endpoint = generateMode === 'bulk' ? '/api/wifi/bulk-generate' : '/api/wifi/generate';
+      const endpoint = (import.meta.env.VITE_API_BASE_URL || '') + (generateMode === 'bulk' ? '/api/wifi/bulk-generate' : '/api/wifi/generate');
       const body = generateMode === 'bulk' 
         ? { quantity: formData.quantity, profile: formData.plan }
         : generateMode === 'member'

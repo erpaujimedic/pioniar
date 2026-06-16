@@ -52,7 +52,7 @@ export default function WifiProfileManager() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const url = isEditMode ? `/api/wifi/profiles/${formData.id}` : '/api/wifi/profiles';
+    const url = (import.meta.env.VITE_API_BASE_URL || '') + (isEditMode ? `/api/wifi/profiles/${formData.id}` : '/api/wifi/profiles');
     const method = isEditMode ? 'PUT' : 'POST';
     
     try {
