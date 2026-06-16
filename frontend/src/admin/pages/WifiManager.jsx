@@ -152,6 +152,29 @@ export default function WifiManager() {
     setIsDeleting(false);
   };
 
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Yakin ingin menghapus ${selectedVouchers.length} voucher terpilih secara permanen?`)) return;
+    
+    setIsDeleting(true);
+    let successCount = 0;
+    
+    const vouchersToDelete = vouchers.filter(v => selectedVouchers.includes(v.code));
+    
+    for (const v of vouchersToDelete) {
+      try {
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + `/api/wifi/vouchers/${v.id}?username=${v.code}`, { method: 'DELETE' });
+        if (res.ok) successCount++;
+      } catch (err) {
+        console.error("Gagal hapus", v.code);
+      }
+    }
+    
+    setNotification({ type: 'success', message: `${successCount} dari ${vouchersToDelete.length} voucher berhasil dihapus` });
+    setSelectedVouchers([]);
+    setIsDeleting(false);
+    fetchVouchers();
+  };
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setIsEditing(true);
@@ -288,18 +311,29 @@ export default function WifiManager() {
           {/* Right: Search & Generate */}
           <div style={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center', gap: '0.5rem', flex: '1 1 300px', justifyContent: 'flex-end', maxWidth: '100%' }}>
             {selectedVouchers.length > 0 && (
-              <button 
-                onClick={() => {
-                  const toPrint = vouchers.filter(v => selectedVouchers.includes(v.code)).map(v => ({ username: v.code, password: v.code, plan: v.plan }));
-                  setPrintData(toPrint);
-                  setSelectedVouchers([]);
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: '#fff', border: '1px solid var(--pioniar-border)', color: 'var(--pioniar-text)', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)', flexShrink: 0, whiteSpace: 'nowrap' }} 
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-              >
-                <Printer size={14} /> Cetak ({selectedVouchers.length})
-              </button>
+              <>
+                <button 
+                  onClick={() => {
+                    const toPrint = vouchers.filter(v => selectedVouchers.includes(v.code)).map(v => ({ username: v.code, password: v.code, plan: v.plan }));
+                    setPrintData(toPrint);
+                    setSelectedVouchers([]);
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: '#fff', border: '1px solid var(--pioniar-border)', color: 'var(--pioniar-text)', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)', flexShrink: 0, whiteSpace: 'nowrap' }} 
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                >
+                  <Printer size={15} /> Cetak ({selectedVouchers.length})
+                </button>
+                <button 
+                  onClick={handleBulkDelete}
+                  disabled={isDeleting}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0, whiteSpace: 'nowrap' }} 
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'} 
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                >
+                  {isDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />} Hapus ({selectedVouchers.length})
+                </button>
+              </>
             )}
 
             <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, maxWidth: '300px' }}>
