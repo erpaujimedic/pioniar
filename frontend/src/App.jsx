@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ClientLayout from './client/ClientLayout';
 import LandingPage from './client/pages/LandingPage';
 import HotspotLogin from './client/pages/HotspotLogin';
+import HotspotStatus from './client/pages/HotspotStatus';
 import VoucherShop from './client/pages/VoucherShop';
 import Checkout from './client/pages/Checkout';
 import AboutPage from './client/pages/AboutPage';
@@ -31,6 +32,7 @@ function App() {
         <Route path="/" element={<ClientLayout />}>
           <Route index element={<LandingPage />} />
           <Route path="portal" element={<HotspotLogin />} />
+          <Route path="portalinformation" element={<HotspotStatus />} />
           <Route path="portal/buy" element={<VoucherShop />} />
           <Route path="portal/checkout" element={<Checkout />} />
           <Route path="about-me" element={<AboutPage />} />

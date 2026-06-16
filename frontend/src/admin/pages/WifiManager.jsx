@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Search, MoreVertical, Server, X, Loader2, RefreshCw, CheckCircle, AlertCircle, ChevronDown, Printer, Trash2, Edit2 } from 'lucide-react';
+import HexLoader from '../../components/HexLoader';
 
 export default function WifiManager() {
   const [vouchers, setVouchers] = useState([]);
@@ -213,7 +214,7 @@ export default function WifiManager() {
   const totalPages = Math.ceil(filteredVouchers.length / itemsPerPage);
 
   return (
-    <div className="animate-fade-in" style={{ position: 'relative' }}>
+    <div className="animate-fade-in" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       
       {/* Notifications */}
       {notification && createPortal(
@@ -237,21 +238,21 @@ export default function WifiManager() {
       )}
 
       {/* Voucher Table Section (EAM Style) */}
-      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 105px)', gap: '0.5rem' }}>
+      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '0.5rem', overflow: 'hidden' }}>
         {/* Top Control Bar Card */}
-        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
           
           {/* Left: Refresh, Switcher & KPI Cards */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <button onClick={handleSync} title="Sync MikroTik" disabled={isSyncing} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%', flex: '1 1 auto', overflow: 'hidden' }}>
+            <button onClick={handleSync} title="Sync MikroTik" disabled={isSyncing} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', flexShrink: 0 }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}>
               {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
             </button>
             
             {/* KPI Cards / Tabs */}
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div className="hide-scrollbar" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', flex: 1, paddingBottom: '0.1rem', WebkitOverflowScrolling: 'touch' }}>
               <div 
                 onClick={() => { setActiveTab('Tersedia'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Tersedia' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Tersedia' ? '#10b981' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Tersedia' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Tersedia' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Tersedia' ? '#10b981' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Tersedia' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
               >
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Tersedia' ? '#10b981' : '#64748b', letterSpacing: '0.02em' }}>TERSEDIA</span>
@@ -259,7 +260,7 @@ export default function WifiManager() {
               </div>
               <div 
                 onClick={() => { setActiveTab('Berjalan'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Berjalan' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Berjalan' ? '#f59e0b' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Berjalan' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Berjalan' ? '#f59e0b' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
               >
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Berjalan' ? '#f59e0b' : '#64748b', letterSpacing: '0.02em' }}>BERJALAN</span>
@@ -269,7 +270,7 @@ export default function WifiManager() {
           </div>
             
           {/* Right: Search & Generate */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center', gap: '0.5rem', flex: '1 1 300px', justifyContent: 'flex-end', maxWidth: '100%' }}>
             {selectedVouchers.length > 0 && (
               <button 
                 onClick={() => {
@@ -277,7 +278,7 @@ export default function WifiManager() {
                   setPrintData(toPrint);
                   setSelectedVouchers([]);
                 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: '#fff', border: '1px solid var(--pioniar-border)', color: 'var(--pioniar-text)', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' }} 
+                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: '#fff', border: '1px solid var(--pioniar-border)', color: 'var(--pioniar-text)', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)', flexShrink: 0, whiteSpace: 'nowrap' }} 
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
               >
@@ -285,25 +286,26 @@ export default function WifiManager() {
               </button>
             )}
 
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, maxWidth: '300px' }}>
               <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input 
                 type="text" 
                 placeholder="Cari voucher..." 
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{ padding: '0.45rem 1rem 0.45rem 2.25rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', fontSize: '0.85rem', width: '220px', outline: 'none', transition: 'all 0.2s' }}
+                style={{ padding: '0.45rem 1rem 0.45rem 2.25rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', fontSize: '0.85rem', width: '100%', outline: 'none', transition: 'all 0.2s' }}
               />
             </div>
             
-            <button onClick={() => setShowModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: 'var(--pioniar-primary)', border: '1px solid var(--pioniar-primary)', color: '#ffffff', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(40, 96, 134, 0.2)' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1e4a68'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--pioniar-primary)'}>
+            <button onClick={() => setShowModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: 'var(--pioniar-primary)', border: '1px solid var(--pioniar-primary)', color: '#ffffff', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(40, 96, 134, 0.2)', flexShrink: 0, whiteSpace: 'nowrap' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1e4a68'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--pioniar-primary)'}>
               <Plus size={14} strokeWidth={3} /> Generate
             </button>
           </div>
         </div>
 
         {/* Table Card */}
-        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', backgroundColor: '#ffffff' }}>
+        <div className="glass-panel table-responsive" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflowX: 'auto', overflowY: 'hidden', backgroundColor: '#ffffff' }}>
+          <div style={{ minWidth: '600px', display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
           {/* EAM Standalone Table Header Row */}
           <div style={{ padding: '0.75rem 1.5rem', display: 'grid', gridTemplateColumns: '40px 2fr 2fr 1fr 100px', borderBottom: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff', alignItems: 'center' }}>
           <input 
@@ -321,28 +323,27 @@ export default function WifiManager() {
           <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Aksi</span>
         </div>
         
-        {/* Table Body Area */}
         <div style={{ backgroundColor: '#ffffff', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--pioniar-text-muted)' }}>
-              <Loader2 size={32} className="animate-spin" style={{ marginBottom: '1rem', color: 'var(--pioniar-primary)' }} />
-              <p>Memuat data dari MikroTik...</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--pioniar-text-muted)', padding: '3rem' }}>
+              <HexLoader size={48} color="var(--pioniar-primary)" />
+              <p style={{ marginTop: '1rem' }}>Memuat data dari MikroTik...</p>
             </div>
           ) : activeTab === 'Voucher Tersedia' && filteredVouchers.length === 0 ? (
-             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--pioniar-text-muted)', padding: '3rem' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
+              <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
                 <Server size={24} color="#94a3b8" />
               </div>
-              <h4 style={{ color: 'var(--pioniar-primary)', fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem' }}>Belum ada voucher tersedia.</h4>
-              <p style={{ fontSize: '0.85rem' }}>Silakan buat voucher baru menggunakan tombol Generate di atas.</p>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
+              <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian voucher.' : 'Belum ada voucher tersedia. Silakan buat voucher baru.'}</div>
             </div>
           ) : activeTab === 'Voucher Aktif' && filteredVouchers.length === 0 ? (
-             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--pioniar-text-muted)', padding: '3rem' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
+              <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
                 <Server size={24} color="#94a3b8" />
               </div>
-              <h4 style={{ color: 'var(--pioniar-primary)', fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem' }}>Belum ada voucher aktif.</h4>
-              <p style={{ fontSize: '0.85rem' }}>Belum ada user yang terhubung ke jaringan saat ini.</p>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
+              <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Belum ada user yang terhubung ke jaringan saat ini.'}</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -359,7 +360,7 @@ export default function WifiManager() {
                       }}
                       style={{ cursor: 'pointer' }}
                     />
-                    <span style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--pioniar-text)' }}>{v.code}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pioniar-text)' }}>{v.code}</span>
                     <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{v.plan}</span>
                     <span>
                       <span style={{ 
@@ -416,8 +417,8 @@ export default function WifiManager() {
                   </div>
                 ))}
               </div>
-              <div style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--pioniar-text-muted)' }}>
                     <span>Tampilkan</span>
                     <select 
@@ -455,6 +456,7 @@ export default function WifiManager() {
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
       </div>
@@ -572,47 +574,25 @@ export default function WifiManager() {
                   Pilih Paket (Plan)
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <div 
-                    onClick={() => setIsPlanDropdownOpen(!isPlanDropdownOpen)}
+                  <select 
                     className="input-base"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                    value={formData.plan}
+                    onChange={(e) => setFormData({...formData, plan: e.target.value})}
+                    style={{ width: '100%', appearance: 'none', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.02)' }}
                   >
-                    <span style={{ color: formData.plan ? 'var(--pioniar-text)' : '#94a3b8' }}>
-                      {formData.plan === 'voucher_harian' ? 'Voucher Harian (Limit 2Mbps)' : 
-                       formData.plan === 'member_vip' ? 'Member VIP (Limit 5Mbps)' : 'Pilih Paket...'}
-                    </span>
-                    <ChevronDown size={16} color="#94a3b8" />
-                  </div>
-                  {isPlanDropdownOpen && (
-                    <div className="animate-slide-up" style={{
-                      position: 'absolute', top: 'calc(100% + 0.5rem)', left: 0, right: 0,
-                      backgroundColor: 'var(--pioniar-bg)', border: '1px solid var(--pioniar-border)',
-                      borderRadius: '0.5rem', overflow: 'hidden', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.4)'
-                    }}>
-                      {[
-                        { id: 'voucher_harian', label: 'Voucher Harian (Limit 2Mbps)' },
-                        { id: 'member_vip', label: 'Member VIP (Limit 5Mbps)' }
-                      ].map(plan => (
-                        <div 
-                          key={plan.id}
-                          onClick={() => {
-                            setFormData({...formData, plan: plan.id});
-                            setIsPlanDropdownOpen(false);
-                          }}
-                          style={{
-                            padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem',
-                            backgroundColor: formData.plan === plan.id ? 'rgba(56, 189, 248, 0.1)' : 'transparent',
-                            color: formData.plan === plan.id ? 'var(--pioniar-accent)' : 'var(--pioniar-text)'
-                          }}
-                          onMouseOver={(e) => { if(formData.plan !== plan.id) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)' }}
-                          onMouseOut={(e) => { if(formData.plan !== plan.id) e.currentTarget.style.backgroundColor = 'transparent' }}
-                        >
-                          {plan.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    {profiles.map(p => (
+                      <option key={p.id} value={p.name}>
+                        {p.name === 'default' ? 'Default Plan' : p.name} 
+                        {p.rate_limit ? ` (Limit ${p.rate_limit})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} color="#94a3b8" style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                 </div>
+              </div>
+              
+              <div style={{ padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '0.375rem', border: '1px dashed #cbd5e1' }}>
+                 <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>*Catatan: Masa aktif dan Limit Kecepatan mengikuti pengaturan profil/paket.</p>
               </div>
 
               <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>

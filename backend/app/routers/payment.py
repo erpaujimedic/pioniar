@@ -1,62 +1,45 @@
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request, HTTPException, Depends
+from pydantic import BaseModel
+from typing import Optional
 from app.services.tripay_service import tripay_service
 from app.services.mikrotik_service import mikrotik_service
 from app.services.supabase_service import supabase_service
+from app.core.db import get_session, Transaction
+from sqlmodel import Session, select
 import random
 import string
-import json
-import os
-import hmac
+import datetime
 
-bp = Blueprint('payment', __name__)
+router = APIRouter()
 
-DB_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'transactions.json')
+class CreateTransactionRequest(BaseModel):
+    plan_name: str
+    price: int
 
-def load_transactions():
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, 'r') as f:
-            try:
-                return json.load(f)
-            except:
-                return {}
-    return {}
-
-def save_transactions(data):
-    with open(DB_FILE, 'w') as f:
-        json.dump(data, f, indent=4)
-
-@bp.route('/create', methods=['POST'])
-def create_transaction():
-    data = request.json
-    plan_name = data.get('plan_name')
-    price = data.get('price')
-    
-    if not plan_name or not price:
-        return jsonify({"status": "Failed", "error": "Invalid plan data"}), 400
+@router.post("/create")
+async def create_transaction(data: CreateTransactionRequest, db: Session = Depends(get_session)):
+    if not data.plan_name or not data.price:
+        raise HTTPException(status_code=400, detail="Invalid plan data")
         
-    # Generate random username for the voucher
     random_str = ''.join(random.choices(string.digits, k=4))
     username = f"PION-{random_str}"
     
-    # Merchant Ref format: PION-HOTSPOT-PlanName-Username
-    safe_plan = plan_name.replace(' ', '_')
+    safe_plan = data.plan_name.replace(' ', '_')
     merchant_ref = f"PION-HOTSPOT-{safe_plan}-{username}"
     
-    # Order items for Tripay
     order_items = [
         {
             'sku': safe_plan,
-            'name': f"Voucher WiFi: {plan_name}",
-            'price': price,
+            'name': f"Voucher WiFi: {data.plan_name}",
+            'price': data.price,
             'quantity': 1,
         }
     ]
     
-    # Request to Tripay (Using QRIS by default)
-    success, res = tripay_service.request_transaction(
+    success, res = await tripay_service.request_transaction(
         method='QRIS',
         merchant_ref=merchant_ref,
-        amount=price,
+        amount=data.price,
         customer_name='Pelanggan Pioniar',
         customer_email='pelanggan@pioniar.net',
         customer_phone='081234567890',
@@ -65,82 +48,75 @@ def create_transaction():
     )
     
     if success:
-        # Save to local db
         tx_data = res.get('data', {})
-        transactions = load_transactions()
-        transactions[merchant_ref] = {
-            "status": "UNPAID",
-            "username": username,
-            "plan": plan_name,
-            "checkout_url": tx_data.get('checkout_url'),
-            "qr_url": tx_data.get('qr_url'),
-            "amount": price
-        }
-        save_transactions(transactions)
         
-        return jsonify({
+        new_tx = Transaction(
+            merchant_ref=merchant_ref,
+            status="UNPAID",
+            username=username,
+            plan=data.plan_name,
+            checkout_url=tx_data.get('checkout_url'),
+            qr_url=tx_data.get('qr_url'),
+            amount=data.price
+        )
+        db.add(new_tx)
+        db.commit()
+        
+        return {
             "status": "Success",
             "merchant_ref": merchant_ref,
             "checkout_url": tx_data.get('checkout_url'),
             "qr_url": tx_data.get('qr_url'),
             "tripay_data": tx_data
-        })
+        }
     else:
-        return jsonify({"status": "Failed", "error": res}), 500
+        raise HTTPException(status_code=500, detail=str(res))
 
-@bp.route('/callback', methods=['POST'])
-def callback():
-    json_data = request.json
+@router.post("/callback")
+async def callback(request: Request, db: Session = Depends(get_session)):
+    json_data = await request.json()
     callback_signature = request.headers.get('x-callback-signature')
     
     if not callback_signature:
-        return jsonify({"success": False, "message": "No signature"}), 400
+        raise HTTPException(status_code=400, detail="No signature")
         
-    # Verify signature
-    # Since Flask request.get_data() gets raw body
-    raw_body = request.get_data(as_text=True)
-    if not tripay_service.verify_callback_signature(raw_body, callback_signature):
-        return jsonify({"success": False, "message": "Invalid signature"}), 400
+    raw_body = await request.body()
+    if not tripay_service.verify_callback_signature(raw_body.decode('utf-8'), callback_signature):
+        raise HTTPException(status_code=400, detail="Invalid signature")
         
     if json_data.get('status') == 'PAID':
         merchant_ref = json_data.get('merchant_ref')
-        transactions = load_transactions()
         
-        if merchant_ref in transactions and transactions[merchant_ref]['status'] != 'PAID':
-            tx = transactions[merchant_ref]
-            username = tx['username']
-            plan_name = tx['plan']
-            price = tx['amount']
+        tx = db.exec(select(Transaction).where(Transaction.merchant_ref == merchant_ref)).first()
+        
+        if tx and tx.status != 'PAID':
+            username = tx.username
+            plan_name = tx.plan
+            price = tx.amount
             
-            # Generate di MikroTik
             success, msg = mikrotik_service.generate_voucher(username, username, plan_name)
             if success:
-                # Insert ke Supabase
                 supabase_service.insert_voucher(username, username, plan_name, price)
-                # Tambah ke Sales
-                import datetime
                 sold_at = datetime.datetime.now().isoformat()
                 supabase_service.insert_sale(username, plan_name, price, sold_at)
                 
-            # Update status transaksi lokal
-            tx['status'] = 'PAID'
-            save_transactions(transactions)
+            tx.status = 'PAID'
+            db.add(tx)
+            db.commit()
             
-    return jsonify({"success": True})
+    return {"success": True}
 
-@bp.route('/status', methods=['GET'])
-def get_status():
-    merchant_ref = request.args.get('ref')
-    if not merchant_ref:
-        return jsonify({"status": "Failed"}), 400
+@router.get("/status")
+def get_status(ref: str, db: Session = Depends(get_session)):
+    if not ref:
+        raise HTTPException(status_code=400, detail="Missing ref")
         
-    transactions = load_transactions()
-    tx = transactions.get(merchant_ref)
+    tx = db.exec(select(Transaction).where(Transaction.merchant_ref == ref)).first()
     
     if tx:
-        return jsonify({
+        return {
             "status": "Success",
-            "payment_status": tx.get('status'),
-            "username": tx.get('username') if tx.get('status') == 'PAID' else None
-        })
-    return jsonify({"status": "Failed", "error": "Not found"}), 404
+            "payment_status": tx.status,
+            "username": tx.username if tx.status == 'PAID' else None
+        }
+    raise HTTPException(status_code=404, detail="Not found")

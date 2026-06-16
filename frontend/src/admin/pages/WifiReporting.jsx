@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { LineChart, DollarSign, Calendar, RefreshCw, Loader2, Search, TrendingUp, Users } from 'lucide-react';
+import HexLoader from '../../components/HexLoader';
 
 export default function WifiReporting() {
   const [sales, setSales] = useState([]);
@@ -105,20 +106,20 @@ export default function WifiReporting() {
         </div>
 
         {/* Top Control Bar Card */}
-        <div className="glass-panel" style={{ borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+        <div className="glass-panel" style={{ borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <button className="btn btn-outline" onClick={fetchSales} disabled={loading} title="Refresh Data" style={{ padding: '0.6rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%', flex: '1 1 auto', overflow: 'hidden' }}>
+            <button className="btn btn-outline" onClick={fetchSales} disabled={loading} title="Refresh Data" style={{ padding: '0.6rem', flexShrink: 0 }}>
               <RefreshCw size={18} className={loading ? "animate-spin" : ""} color="#64748b" />
             </button>
 
             {/* Filter Tabs */}
-            <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', gap: '0.25rem', overflowX: 'auto', flex: 1, WebkitOverflowScrolling: 'touch' }}>
               {['Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Tahun Ini', 'Semua'].map(f => (
                 <button 
                   key={f}
                   onClick={() => setFilter(f)}
-                  style={{ padding: '0.35rem 0.75rem', borderRadius: '0.35rem', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, transition: 'all 0.2s', backgroundColor: filter === f ? '#ffffff' : 'transparent', color: filter === f ? 'var(--pioniar-primary)' : '#64748b', boxShadow: filter === f ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+                  style={{ padding: '0.35rem 0.75rem', borderRadius: '0.35rem', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, transition: 'all 0.2s', backgroundColor: filter === f ? '#ffffff' : 'transparent', color: filter === f ? 'var(--pioniar-primary)' : '#64748b', boxShadow: filter === f ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', whiteSpace: 'nowrap' }}
                 >
                   {f}
                 </button>
@@ -126,15 +127,17 @@ export default function WifiReporting() {
             </div>
           </div>
           
-          <div style={{ position: 'relative' }}>
-            <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder="Cari username, paket..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ padding: '0.5rem 1rem 0.5rem 2.5rem', borderRadius: '2rem', border: '1px solid var(--pioniar-border)', outline: 'none', width: '250px', fontSize: '0.85rem' }}
-            />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', flex: '1 1 300px', justifyContent: 'flex-end' }}>
+            <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, maxWidth: '300px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input 
+                type="text" 
+                placeholder="Cari username, paket..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ padding: '0.45rem 1rem 0.45rem 2.25rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', fontSize: '0.85rem', width: '100%', outline: 'none', transition: 'all 0.2s' }}
+              />
+            </div>
           </div>
         </div>
 
@@ -153,8 +156,8 @@ export default function WifiReporting() {
           <div style={{ backgroundColor: '#ffffff', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {loading && sales.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--pioniar-text-muted)' }}>
-                <Loader2 size={32} className="animate-spin" style={{ marginBottom: '1rem', color: 'var(--pioniar-primary)' }} />
-                <p>Memuat laporan penjualan...</p>
+                <HexLoader size={48} color="var(--pioniar-primary)" />
+                <p style={{ marginTop: '1rem' }}>Memuat laporan penjualan...</p>
               </div>
             ) : searchedSales.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--pioniar-text-muted)', padding: '3rem' }}>

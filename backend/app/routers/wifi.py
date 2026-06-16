@@ -1,26 +1,58 @@
-from flask import Blueprint, jsonify
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+from typing import Optional, List
 from app.services.mikrotik_service import mikrotik_service
+import random
+import string
 
-bp = Blueprint('wifi', __name__)
+router = APIRouter()
 
-@bp.route("/test-connection", methods=["GET"])
+class GenerateVoucherRequest(BaseModel):
+    username: str
+    password: Optional[str] = None
+    profile: str = 'default'
+    limit_uptime: Optional[str] = None
+
+class BulkGenerateRequest(BaseModel):
+    quantity: int = 1
+    profile: str = 'voucher_harian'
+    limit_uptime: Optional[str] = None
+
+class MarkPrintedRequest(BaseModel):
+    usernames: List[str]
+
+class ProfileRequest(BaseModel):
+    name: str
+    rate_limit: str = ''
+    shared_users: str = '1'
+    price: int = 0
+    validity: str = ''
+
+class EditVoucherRequest(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    plan: Optional[str] = None
+
+@router.get("/test-connection")
 def test_connection():
     identity = mikrotik_service.get_system_identity()
     if identity is not None:
-        return jsonify({"status": "Connected", "identity": identity})
-    return jsonify({"status": "Failed", "error": "Koneksi ke MikroTik gagal"}), 500
+        return {"status": "Connected", "identity": identity}
+    raise HTTPException(status_code=500, detail="Koneksi ke MikroTik gagal")
 
-@bp.route("/reboot", methods=["POST"])
+@router.post("/reboot")
 def reboot():
     success, msg = mikrotik_service.reboot_router()
     if success:
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/vouchers", methods=["GET"])
+@router.get("/vouchers")
 def get_vouchers():
     users = mikrotik_service.get_hotspot_users()
-    
+    if users is None:
+        raise HTTPException(status_code=500, detail="Koneksi ke MikroTik gagal")
+        
     from app.services.supabase_service import supabase_service
     try:
         res = supabase_service.supabase.table('vouchers').select('code, is_printed, status, first_used_at, expires_at').execute()
@@ -49,6 +81,8 @@ def get_vouchers():
         first_used_at = sb_data.get('first_used_at', None)
         expires_at = sb_data.get('expires_at', None)
         
+        limit_uptime = user.get('limit-uptime', None)
+        
         vouchers.append({
             "id": user.get('id'),
             "code": username,
@@ -56,35 +90,37 @@ def get_vouchers():
             "status": status,
             "is_printed": is_printed,
             "uptime": uptime,
+            "limit_uptime": limit_uptime,
             "first_used_at": first_used_at,
             "expires_at": expires_at
         })
         
-    return jsonify(vouchers)
+    return vouchers
 
-@bp.route("/generate", methods=["POST"])
-def generate_voucher():
-    from flask import request
+@router.post("/generate")
+def generate_voucher(data: GenerateVoucherRequest):
     from app.services.supabase_service import supabase_service
     
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    profile = data.get('profile', 'default')
+    username = data.username
+    password = data.password
+    profile = data.profile
+    limit_uptime = data.limit_uptime
     
     if not username:
-        return jsonify({"status": "Failed", "error": "Username wajib diisi"}), 400
+        raise HTTPException(status_code=400, detail="Username wajib diisi")
         
+    # Fetch validity from profile
+    sb_profiles = supabase_service.get_profiles()
+    validity = next((p.get('validity', '') for p in sb_profiles if p.get('name') == profile), '')
+    
     # 1. Tulis ke MikroTik
-    success, msg = mikrotik_service.generate_voucher(username, password or username, profile)
+    success, msg = mikrotik_service.generate_voucher(username, password or username, profile, validity)
     
     if success:
         # 2. Dual-Write ke Supabase
-        # Get price
         sb_profiles = supabase_service.get_profiles()
         price = next((p.get('price', 0) for p in sb_profiles if p.get('name') == profile), 0)
         
-        # Logika: Jika password kosong atau sama dengan username = Voucher. Jika beda = Member.
         if not password or username == password:
             sup_success, sup_data = supabase_service.insert_voucher(username, password or username, profile, price)
         else:
@@ -93,49 +129,40 @@ def generate_voucher():
         if not sup_success:
             print(f"[Supabase Warning] Gagal menyimpan ke Supabase: {sup_data}")
             
-        return jsonify({
+        return {
             "status": "Success", 
             "message": msg, 
             "supabase_synced": sup_success
-        })
+        }
         
-    return jsonify({"status": "Failed", "error": msg}), 500
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/bulk-generate", methods=["POST"])
-def bulk_generate_voucher():
-    from flask import request
+@router.post("/bulk-generate")
+def bulk_generate_voucher(data: BulkGenerateRequest):
     from app.services.supabase_service import supabase_service
-    import random
-    import string
     
-    data = request.json
-    try:
-        quantity = int(data.get('quantity', 1))
-    except ValueError:
-        return jsonify({"status": "Failed", "error": "Format quantity salah"}), 400
-        
-    profile = data.get('profile', 'voucher_harian')
+    quantity = data.quantity
+    profile = data.profile
+    limit_uptime = data.limit_uptime
     
     if quantity < 1 or quantity > 100:
-        return jsonify({"status": "Failed", "error": "Jumlah harus antara 1 dan 100"}), 400
+        raise HTTPException(status_code=400, detail="Jumlah harus antara 1 dan 100")
         
     generated = []
     
-    # 1. Loop untuk generate
+    # Fetch profiles once to prevent N+1 query lag
+    sb_profiles = supabase_service.get_profiles()
+    validity = next((p.get('validity', '') for p in sb_profiles if p.get('name') == profile), '')
+    price = next((p.get('price', 0) for p in sb_profiles if p.get('name') == profile), 0)
+    
     for _ in range(quantity):
-        # Generate random 4-digit code e.g. PION-4829
         random_str = ''.join(random.choices(string.digits, k=4))
         username = f"PION-{random_str}"
-        password = username # Untuk hotspot voucher biasa, user=pass
+        password = username
         
-        # Tulis ke MikroTik
-        success, msg = mikrotik_service.generate_voucher(username, password, profile)
+        success, msg = mikrotik_service.generate_voucher(username, password, profile, validity)
         
         if success:
-            # Dual-Write ke Supabase
-            sb_profiles = supabase_service.get_profiles()
-            price = next((p.get('price', 0) for p in sb_profiles if p.get('name') == profile), 0)
-            
             supabase_service.insert_voucher(username, password, profile, price)
             generated.append({
                 "username": username,
@@ -144,72 +171,62 @@ def bulk_generate_voucher():
             })
             
     if not generated:
-        return jsonify({"status": "Failed", "error": "Gagal membuat voucher di MikroTik"}), 500
+        raise HTTPException(status_code=500, detail="Gagal membuat voucher di MikroTik")
         
-    return jsonify({
+    return {
         "status": "Success", 
         "message": f"Berhasil membuat {len(generated)} voucher", 
         "vouchers": generated
-    })
+    }
 
-@bp.route("/sync", methods=["POST"])
+@router.post("/sync")
 def sync_mikrotik():
-    # Placeholder for mikrotik synchronization logic
-    return jsonify({"status": "success", "message": "Synced successfully with Mikrotik"})
+    return {"status": "success", "message": "Synced successfully with Mikrotik"}
 
-@bp.route("/monitor", methods=["GET"])
+@router.get("/monitor")
 def get_live_monitor():
     data = mikrotik_service.get_monitor_data()
     if data is not None:
-        return jsonify({"status": "Success", "data": data})
-    return jsonify({"status": "Failed", "error": "Gagal mengambil data live monitor dari MikroTik"}), 500
+        return {"status": "Success", "data": data}
+    raise HTTPException(status_code=500, detail="Gagal mengambil data live monitor dari MikroTik")
 
-@bp.route("/<mt_id>", methods=["DELETE"])
-def delete_voucher(mt_id):
-    from flask import request
-    username = request.args.get('username')
-    
+@router.delete("/{mt_id}")
+def delete_voucher(mt_id: str, username: Optional[str] = None):
     success, msg = mikrotik_service.delete_voucher(mt_id)
     if success:
         if username:
             from app.services.supabase_service import supabase_service
             supabase_service.delete_record(username)
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/<mt_id>", methods=["PUT"])
-def edit_voucher(mt_id):
-    from flask import request
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    plan = data.get('plan')
-    
-    success, msg = mikrotik_service.edit_voucher(mt_id, password, plan)
+@router.put("/{mt_id}")
+def edit_voucher(mt_id: str, data: EditVoucherRequest):
+    success, msg = mikrotik_service.edit_voucher(mt_id, data.password, data.plan)
     if success:
-        if username and (password or plan):
+        if data.username and (data.password or data.plan):
             from app.services.supabase_service import supabase_service
-            supabase_service.update_record(username, password, plan)
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+            supabase_service.update_record(data.username, data.password, data.plan)
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/mark-printed", methods=["POST"])
-def mark_printed():
-    from flask import request
-    data = request.json
-    usernames = data.get('usernames', [])
-    if not usernames:
-        return jsonify({"status": "Failed", "error": "No usernames provided"}), 400
+@router.post("/mark-printed")
+def mark_printed(data: MarkPrintedRequest):
+    if not data.usernames:
+        raise HTTPException(status_code=400, detail="No usernames provided")
         
     from app.services.supabase_service import supabase_service
-    success, msg = supabase_service.mark_as_printed(usernames)
+    success, msg = supabase_service.mark_as_printed(data.usernames)
     if success:
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/profiles", methods=["GET"])
+@router.get("/profiles")
 def get_profiles():
     mt_profiles = mikrotik_service.get_profiles()
+    if mt_profiles is None:
+        raise HTTPException(status_code=500, detail="Koneksi ke MikroTik gagal")
+        
     from app.services.supabase_service import supabase_service
     sb_profiles = supabase_service.get_profiles()
     sb_dict = {p['name']: p for p in sb_profiles}
@@ -218,73 +235,82 @@ def get_profiles():
     for p in mt_profiles:
         name = p.get('name')
         price = sb_dict.get(name, {}).get('price', 0)
+        validity = sb_dict.get(name, {}).get('validity', '')
         merged.append({
             "id": p.get('id'),
             "name": name,
             "rate_limit": p.get('rate-limit', ''),
             "shared_users": p.get('shared-users', '1'),
-            "price": price
+            "price": price,
+            "validity": validity
         })
-    return jsonify(merged)
+    return merged
 
-@bp.route("/profiles", methods=["POST"])
-def add_profile():
-    from flask import request
+@router.post("/profiles")
+def add_profile(data: ProfileRequest):
     from app.services.supabase_service import supabase_service
-    data = request.json
-    name = data.get('name')
-    rate_limit = data.get('rate_limit', '')
-    shared_users = data.get('shared_users', '1')
-    price = int(data.get('price', 0))
     
-    success, msg = mikrotik_service.add_profile(name, rate_limit, shared_users)
+    success, msg = mikrotik_service.add_profile(data.name, data.rate_limit, data.shared_users)
     if success:
-        supabase_service.upsert_profile(name, price)
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+        supabase_service.upsert_profile(data.name, data.price, data.validity)
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/profiles/<mt_id>", methods=["PUT"])
-def update_profile(mt_id):
-    from flask import request
+@router.put("/profiles/{mt_id}")
+def update_profile(mt_id: str, data: ProfileRequest):
     from app.services.supabase_service import supabase_service
-    data = request.json
-    name = data.get('name')
-    rate_limit = data.get('rate_limit')
-    shared_users = data.get('shared_users')
-    price = int(data.get('price', 0))
     
-    success, msg = mikrotik_service.edit_profile(mt_id, name, rate_limit, shared_users)
-    if success and name:
-        supabase_service.upsert_profile(name, price)
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+    success, msg = mikrotik_service.edit_profile(mt_id, data.name, data.rate_limit, data.shared_users)
+    if success and data.name:
+        supabase_service.upsert_profile(data.name, data.price, data.validity)
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/profiles/<mt_id>", methods=["DELETE"])
-def remove_profile(mt_id):
-    from flask import request
+@router.delete("/profiles/{mt_id}")
+def remove_profile(mt_id: str, name: Optional[str] = None):
     from app.services.supabase_service import supabase_service
-    name = request.args.get('name')
     
     success, msg = mikrotik_service.delete_profile(mt_id)
     if success and name:
         supabase_service.delete_profile(name)
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/active", methods=["GET"])
+@router.get("/active")
 def get_active():
     data = mikrotik_service.get_active_sessions()
-    return jsonify(data)
+    if data is None:
+        raise HTTPException(status_code=500, detail="Koneksi ke MikroTik gagal")
+    return data
 
-@bp.route("/active/<mt_id>", methods=["DELETE"])
-def kick_active(mt_id):
+@router.delete("/active/{mt_id}")
+def kick_active(mt_id: str):
     success, msg = mikrotik_service.kick_active_user(mt_id)
     if success:
-        return jsonify({"status": "Success", "message": msg})
-    return jsonify({"status": "Failed", "error": msg}), 500
+        return {"status": "Success", "message": msg}
+    raise HTTPException(status_code=500, detail=msg)
 
-@bp.route("/sales", methods=["GET"])
+@router.get("/sales")
 def get_sales():
     from app.services.supabase_service import supabase_service
     sales = supabase_service.get_sales()
-    return jsonify(sales)
+    return sales
+
+class AntiLagRequest(BaseModel):
+    enabled: bool
+
+@router.get("/anti-lag/status")
+def get_anti_lag_status():
+    status = mikrotik_service.get_anti_lag_status()
+    return {"status": "Success", "enabled": status}
+
+@router.post("/anti-lag/toggle")
+def toggle_anti_lag(req: AntiLagRequest):
+    if req.enabled:
+        success, msg = mikrotik_service.enable_anti_lag()
+    else:
+        success, msg = mikrotik_service.disable_anti_lag()
+        
+    if success:
+        return {"status": "Success", "message": msg, "enabled": req.enabled}
+    raise HTTPException(status_code=500, detail=msg)

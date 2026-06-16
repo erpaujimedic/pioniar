@@ -1,20 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, Navigate, useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 
 export default function HotspotLogin() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [loginMode, setLoginMode] = useState('voucher'); // 'voucher' atau 'member'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
     const error = searchParams.get('error');
     if (error) {
       setErrorMsg(error);
     }
-  }, [searchParams]);
+
+    const status = searchParams.get('status');
+    const user = searchParams.get('username');
+    
+    if (status === 'logged_out') {
+      localStorage.removeItem('hotspot_session');
+      setSession(null);
+      setSearchParams({});
+    } else if (status === 'success' && user) {
+      const newSession = {
+        username: user,
+        uptime: searchParams.get('uptime') || '0s',
+        bytes_in: searchParams.get('bytes_in') || '0B',
+        bytes_out: searchParams.get('bytes_out') || '0B',
+      };
+      localStorage.setItem('hotspot_session', JSON.stringify(newSession));
+      setSession(newSession);
+      navigate('/portalinformation', { replace: true });
+    } else {
+      const savedSession = localStorage.getItem('hotspot_session');
+      if (savedSession) {
+        setSession(JSON.parse(savedSession));
+      }
+    }
+  }, [searchParams, setSearchParams, navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -36,6 +62,10 @@ export default function HotspotLogin() {
     
     window.location.href = `${target}?username=${username}&password=${passValue}&dst=${dstUrl}`;
   };
+
+  if (session) {
+    return <Navigate to="/portalinformation" replace />;
+  }
 
   return (
     <div className="bg-hex-pattern" style={{ 

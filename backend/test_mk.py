@@ -1,9 +1,10 @@
 import routeros_api
 
 try:
-    print("Mencoba koneksi ke 192.168.100.1...")
+    print("Mencoba koneksi ke id-36.tunnel.web.id port 6663...")
     connection = routeros_api.RouterOsApiPool(
-        "192.168.100.1",
+        "id-36.tunnel.web.id",
+        port=6663,
         username="admin",
         password="Liveforever27*",
         plaintext_login=True

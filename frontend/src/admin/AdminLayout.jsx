@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Wifi, Hexagon, Coffee, LayoutDashboard, Lock, LogOut, X, ChevronDown } from 'lucide-react';
+import { Wifi, Hexagon, Coffee, LayoutDashboard, Lock, LogOut, X, ChevronDown, Menu } from 'lucide-react';
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -180,10 +180,16 @@ export default function AdminLayout() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--pioniar-bg)', position: 'relative' }}>
+    <div className="admin-layout-container" style={{ display: 'flex', height: '100dvh', overflow: 'hidden', backgroundColor: 'var(--pioniar-bg)', position: 'relative' }}>
+
+      {/* Mobile Overlay */}
+      <div 
+        className={`admin-sidebar-overlay ${isSidebarOpen ? 'open' : ''}`} 
+        onClick={() => setIsSidebarOpen(false)}
+      ></div>
 
       {/* 1. SIDEBAR EAM STYLE CLONE */}
-      <aside style={{ 
+      <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`} style={{ 
         width: isSidebarOpen ? '200px' : '64px', 
         background: 'linear-gradient(to bottom, #ffffff, rgba(241, 245, 249, 0.8))', 
         borderRight: '1px solid var(--pioniar-border)', 
@@ -301,7 +307,7 @@ export default function AdminLayout() {
                   )}
 
                   {!isSidebarOpen && isOpen && (
-                    <div style={{
+                    <div className="desktop-only" style={{
                       position: 'absolute',
                       left: '100%',
                       top: 0,
@@ -443,10 +449,21 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* 2. WORKSPACE CONTROLLER EAM STYLE */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* 2. MAIN CONTENT AREA */}
+      <main className="admin-main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
-        {/* Top Header */}
+        {/* Mobile Header (Only visible on mobile) */}
+        <div className="mobile-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Hexagon size={24} fill="var(--pioniar-primary)" color="white" />
+            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', letterSpacing: '0.05em' }}>PIONIAR</span>
+          </div>
+          <button onClick={() => setIsSidebarOpen(true)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
+            <Menu size={24} color="#64748b" />
+          </button>
+        </div>
+
+        {/* Top Header Section (Desktop only or shared) */}
         <header style={{ 
           height: '56px', minHeight: '56px', backgroundColor: 'var(--pioniar-bg-secondary)', 
           borderBottom: '1px solid var(--pioniar-border)', display: 'flex', 
@@ -494,11 +511,11 @@ export default function AdminLayout() {
         </header>
 
         {/* 3. CONTENT OUTLET */}
-        <main style={{ flex: 1, backgroundColor: 'var(--pioniar-bg)', padding: '1rem', overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--pioniar-bg)', padding: '1rem', overflow: 'hidden' }}>
           <Outlet />
-        </main>
+        </div>
 
-      </div>
+      </main>
     </div>
   );
 }

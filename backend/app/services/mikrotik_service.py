@@ -9,23 +9,46 @@ import threading
 
 class MikrotikService:
     def __init__(self):
-        self.host = os.getenv("MIKROTIK_IP", "192.168.100.1")
-        self.port = int(os.getenv("MIKROTIK_PORT", 8728))
+        self.local_host = os.getenv("MIKROTIK_LOCAL_IP", "192.168.100.1")
+        self.local_port = int(os.getenv("MIKROTIK_LOCAL_PORT", 8728))
+        self.public_host = os.getenv("MIKROTIK_PUBLIC_IP", "")
+        self.public_port = int(os.getenv("MIKROTIK_PUBLIC_PORT", 8728))
+        
         self.username = os.getenv("MIKROTIK_USER", "admin")
         self.password = os.getenv("MIKROTIK_PASSWORD", "")
         self.pool = None
         self.lock = threading.Lock()
 
     def _ensure_pool(self):
-        """Memastikan koneksi pool tersedia."""
+        """Memastikan koneksi pool tersedia dengan fitur fallback (Local -> Public)."""
         if not self.pool:
-            self.pool = routeros_api.RouterOsApiPool(
-                self.host,
-                username=self.username,
-                password=self.password,
-                port=self.port,
-                plaintext_login=True
-            )
+            targets = [
+                (self.local_host, self.local_port),
+            ]
+            if self.public_host:
+                targets.append((self.public_host, self.public_port))
+                
+            last_err = None
+            for host, port in targets:
+                if not host: continue
+                try:
+                    pool = routeros_api.RouterOsApiPool(
+                        host,
+                        username=self.username,
+                        password=self.password,
+                        port=port,
+                        plaintext_login=True
+                    )
+                    pool.get_api().get_resource('/system/identity').get() # test connect
+                    self.pool = pool
+                    print(f"[MikroTik] Terhubung ke {host}:{port}")
+                    return
+                except Exception as e:
+                    last_err = e
+                    continue
+            
+            if last_err:
+                raise last_err
 
     @contextmanager
     def get_api(self):
@@ -68,7 +91,7 @@ class MikrotikService:
                 return users_resource.get()
         except Exception as e:
             print(f"[MikroTik Error] get_hotspot_users: {e}")
-            return []
+            return None
 
     def get_active_users(self):
         try:
@@ -77,13 +100,16 @@ class MikrotikService:
                 return active_resource.get()
         except Exception as e:
             print(f"[MikroTik Error] get_active_users: {e}")
-            return []
+            return None
 
-    def generate_voucher(self, username, password, profile="default"):
+    def generate_voucher(self, username, password, profile="default", limit_uptime=None):
         try:
             with self.get_api() as api:
                 users_resource = api.get_resource('/ip/hotspot/user')
-                users_resource.add(name=username, password=password, profile=profile)
+                kwargs = {'name': username, 'password': password, 'profile': profile}
+                if limit_uptime:
+                    kwargs['limit-uptime'] = limit_uptime
+                users_resource.add(**kwargs)
                 return True, f"Voucher {username} created successfully"
         except Exception as e:
             print(f"[MikroTik Error] generate_voucher: {e}")
@@ -182,7 +208,7 @@ class MikrotikService:
                 return profiles_resource.get()
         except Exception as e:
             print(f"[MikroTik Error] get_profiles: {e}")
-            return []
+            return None
 
     def add_profile(self, name, rate_limit, shared_users):
         try:
@@ -225,7 +251,7 @@ class MikrotikService:
                 return active_resource.get()
         except Exception as e:
             print(f"[MikroTik Error] get_active_sessions: {e}")
-            return []
+            return None
 
     def kick_active_user(self, mt_id):
         try:
@@ -235,6 +261,79 @@ class MikrotikService:
                 return True, "User kicked successfully"
         except Exception as e:
             print(f"[MikroTik Error] kick_active_user: {e}")
+            return False, str(e)
+
+    def get_anti_lag_status(self):
+        try:
+            with self.get_api() as api:
+                qt = api.get_resource('/queue/tree')
+                for t in qt.get():
+                    if t.get('name') == 'PIONIAR_ANTI_LAG_TOTAL':
+                        return True
+                return False
+        except Exception as e:
+            print(f"[MikroTik Error] get_anti_lag_status: {e}")
+            return False
+
+    def disable_anti_lag(self):
+        try:
+            with self.get_api() as api:
+                qt = api.get_resource('/queue/tree')
+                for t in qt.get():
+                    name = t.get('name', '')
+                    if 'PIONIAR_ANTI_LAG' in name or name in ['1_PIONIAR_ICMP', '2_PIONIAR_GAME', '8_PIONIAR_OTHER']:
+                        try:
+                            qt.remove(id=t['id'])
+                        except: pass
+                
+                mangle = api.get_resource('/ip/firewall/mangle')
+                for m in mangle.get():
+                    if m.get('comment') == 'PIONIAR_ANTI_LAG':
+                        mangle.remove(id=m['id'])
+                return True, "Mode Anti-Lag Gaming berhasil dimatikan."
+        except Exception as e:
+            print(f"[MikroTik Error] disable_anti_lag: {e}")
+            return False, str(e)
+
+    def enable_anti_lag(self):
+        self.disable_anti_lag() # Clean first
+        try:
+            with self.get_api() as api:
+                mangle = api.get_resource('/ip/firewall/mangle')
+                
+                # 1. ICMP Mark (Ping)
+                try: mangle.add(**{'chain': 'prerouting', 'protocol': 'icmp', 'action': 'mark-connection', 'new-connection-mark': 'conn_icmp', 'passthrough': 'yes', 'comment': 'PIONIAR_ANTI_LAG'})
+                except: pass
+                try: mangle.add(**{'chain': 'prerouting', 'connection-mark': 'conn_icmp', 'action': 'mark-packet', 'new-packet-mark': 'pkt_icmp', 'passthrough': 'no', 'comment': 'PIONIAR_ANTI_LAG'})
+                except: pass
+                
+                # 2. Games UDP Ports
+                try: mangle.add(**{'chain': 'prerouting', 'protocol': 'udp', 'dst-port': '5000-15000,30000-40000', 'action': 'mark-connection', 'new-connection-mark': 'conn_game', 'passthrough': 'yes', 'comment': 'PIONIAR_ANTI_LAG'})
+                except: pass
+                try: mangle.add(**{'chain': 'prerouting', 'connection-mark': 'conn_game', 'action': 'mark-packet', 'new-packet-mark': 'pkt_game', 'passthrough': 'no', 'comment': 'PIONIAR_ANTI_LAG'})
+                except: pass
+                
+                # 3. Everything Else (Browsing / Download)
+                try: mangle.add(**{'chain': 'prerouting', 'action': 'mark-connection', 'new-connection-mark': 'conn_other', 'passthrough': 'yes', 'comment': 'PIONIAR_ANTI_LAG'})
+                except: pass
+                try: mangle.add(**{'chain': 'prerouting', 'connection-mark': 'conn_other', 'action': 'mark-packet', 'new-packet-mark': 'pkt_other', 'passthrough': 'no', 'comment': 'PIONIAR_ANTI_LAG'})
+                except: pass
+                
+                # Queue Tree
+                qt = api.get_resource('/queue/tree')
+                try: qt.add(**{'name': 'PIONIAR_ANTI_LAG_TOTAL', 'parent': 'global', 'max-limit': '100M'})
+                except: pass
+                try: qt.add(**{'name': '1_PIONIAR_ICMP', 'parent': 'PIONIAR_ANTI_LAG_TOTAL', 'packet-mark': 'pkt_icmp', 'priority': '1', 'limit-at': '1M', 'max-limit': '5M'})
+                except: pass
+                try: qt.add(**{'name': '2_PIONIAR_GAME', 'parent': 'PIONIAR_ANTI_LAG_TOTAL', 'packet-mark': 'pkt_game', 'priority': '2', 'limit-at': '5M', 'max-limit': '20M'})
+                except: pass
+                try: qt.add(**{'name': '8_PIONIAR_OTHER', 'parent': 'PIONIAR_ANTI_LAG_TOTAL', 'packet-mark': 'pkt_other', 'priority': '8', 'limit-at': '10M', 'max-limit': '80M'})
+                except: pass
+                
+                return True, "Mode Anti-Lag Gaming super gahar berhasil diaktifkan!"
+        except Exception as e:
+            self.disable_anti_lag()
+            print(f"[MikroTik Error] enable_anti_lag: {e}")
             return False, str(e)
 
 mikrotik_service = MikrotikService()

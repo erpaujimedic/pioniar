@@ -34,7 +34,7 @@ export default function LiveChatWidget() {
 
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/chat/messages?session_id=${currentSession}`);
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + `/api/chat/messages?session_id=${currentSession}`);
         if (res.ok) {
           const data = await res.json();
           if (data.messages && data.messages.length > 0) {
@@ -80,7 +80,7 @@ export default function LiveChatWidget() {
     setMessages(prev => [...prev, optimisticMessage]);
 
     try {
-      await fetch('http://localhost:8000/api/chat/send', {
+      await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

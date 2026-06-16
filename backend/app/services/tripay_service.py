@@ -4,7 +4,7 @@ import hashlib
 import json
 import urllib.parse
 import time
-import requests
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,7 +38,7 @@ class TripayService:
         ).hexdigest()
         return computed_signature == callback_signature
 
-    def request_transaction(self, method, merchant_ref, amount, customer_name, customer_email, customer_phone, order_items, return_url):
+    async def request_transaction(self, method, merchant_ref, amount, customer_name, customer_email, customer_phone, order_items, return_url):
         endpoint = f"{self.base_url}/transaction/create"
         
         signature = self._generate_signature(merchant_ref, amount)
@@ -61,17 +61,19 @@ class TripayService:
         }
         
         try:
-            response = requests.post(endpoint, json=payload, headers=headers)
-            response.raise_for_status()
-            return True, response.json()
-        except Exception as e:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(endpoint, json=payload, headers=headers)
+                response.raise_for_status()
+                return True, response.json()
+        except httpx.HTTPStatusError as e:
             err_msg = str(e)
-            if hasattr(e, 'response') and e.response is not None:
-                try:
-                    err_data = e.response.json()
-                    err_msg = err_data.get('message', err_msg)
-                except:
-                    pass
+            try:
+                err_data = e.response.json()
+                err_msg = err_data.get('message', err_msg)
+            except:
+                pass
             return False, err_msg
+        except Exception as e:
+            return False, str(e)
 
 tripay_service = TripayService()

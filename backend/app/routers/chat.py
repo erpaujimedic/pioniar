@@ -1,58 +1,49 @@
-from flask import Blueprint, request, jsonify
-from app.db import get_db_connection
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from app.core.db import get_session, Message
+from sqlmodel import Session, select
 import datetime
 
-bp = Blueprint("chat", __name__)
+router = APIRouter()
 
-@bp.route("/send", methods=["POST"])
-def send_message():
-    data = request.json
-    session_id = data.get("session_id")
-    sender = data.get("sender")
-    text = data.get("text")
-    
-    if not all([session_id, sender, text]):
-        return jsonify({"error": "Missing fields"}), 400
-        
-    conn = get_db_connection()
-    # Insert as pending so discord bot picks it up
-    conn.execute(
-        "INSERT INTO messages (session_id, sender, text, is_admin, status) VALUES (?, ?, ?, ?, ?)",
-        (session_id, sender, text, False, 'pending')
+class SendMessageRequest(BaseModel):
+    session_id: str
+    sender: str
+    text: str
+
+@router.post("/send", status_code=201)
+def send_message(data: SendMessageRequest, db: Session = Depends(get_session)):
+    new_message = Message(
+        session_id=data.session_id,
+        sender=data.sender,
+        text=data.text,
+        is_admin=False,
+        status="pending"
     )
-    conn.commit()
-    conn.close()
-    
-    return jsonify({"success": True, "message": "Message queued for Discord"}), 201
+    db.add(new_message)
+    db.commit()
+    return {"success": True, "message": "Message queued for Discord"}
 
-@bp.route("/messages", methods=["GET"])
-def get_messages():
-    session_id = request.args.get("session_id")
+@router.get("/messages")
+def get_messages(session_id: str, db: Session = Depends(get_session)):
     if not session_id:
-        return jsonify({"error": "Missing session_id"}), 400
+        raise HTTPException(status_code=400, detail="Missing session_id")
         
-    conn = get_db_connection()
-    messages = conn.execute(
-        "SELECT * FROM messages WHERE session_id = ? ORDER BY timestamp ASC",
-        (session_id,)
-    ).fetchall()
-    conn.close()
+    messages = db.exec(select(Message).where(Message.session_id == session_id).order_by(Message.timestamp)).all()
     
     result = []
     for msg in messages:
-        # Convert sqlite timestamp string to HH:MM format
         try:
-            dt = datetime.datetime.strptime(msg["timestamp"], "%Y-%m-%d %H:%M:%S")
-            time_str = dt.strftime("%H:%M")
+            time_str = msg.timestamp.strftime("%H:%M")
         except:
-            time_str = msg["timestamp"]
+            time_str = str(msg.timestamp)
             
         result.append({
-            "id": msg["id"],
-            "sender": msg["sender"],
-            "text": msg["text"],
-            "isMe": not msg["is_admin"],
+            "id": msg.id,
+            "sender": msg.sender,
+            "text": msg.text,
+            "isMe": not msg.is_admin,
             "time": time_str
         })
         
-    return jsonify({"messages": result}), 200
+    return {"messages": result}

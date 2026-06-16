@@ -1,7 +1,7 @@
-from flask import Blueprint, jsonify
+from fastapi import APIRouter
 
-bp = Blueprint('livestock', __name__)
+router = APIRouter()
 
-@bp.route("/", methods=["GET"])
+@router.get("/")
 def get_livestock():
-    return jsonify({"message": "Livestock API is under development"})
+    return {"message": "Livestock API is under development"}

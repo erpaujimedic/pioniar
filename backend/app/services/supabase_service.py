@@ -77,14 +77,14 @@ class SupabaseService:
 
     def mark_as_printed(self, usernames: list):
         if not self.supabase: return False, "Not active"
+        if not usernames: return True, "No usernames provided"
         try:
-            for uname in usernames:
-                try:
-                    self.supabase.table('vouchers').update({'is_printed': True}).eq('code', uname).execute()
-                except: pass
-                try:
-                    self.supabase.table('members').update({'is_printed': True}).eq('username', uname).execute()
-                except: pass
+            try:
+                self.supabase.table('vouchers').update({'is_printed': True}).in_('code', usernames).execute()
+            except: pass
+            try:
+                self.supabase.table('members').update({'is_printed': True}).in_('username', usernames).execute()
+            except: pass
             return True, "Marked as printed"
         except Exception as e:
             return False, str(e)

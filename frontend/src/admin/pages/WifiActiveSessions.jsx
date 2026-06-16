@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, RefreshCw, Loader2, Activity, ShieldAlert, X } from 'lucide-react';
+import HexLoader from '../../components/HexLoader';
 
 export default function WifiActiveSessions() {
   const [sessions, setSessions] = useState([]);
@@ -102,29 +103,29 @@ export default function WifiActiveSessions() {
   const totalPages = Math.ceil(currentFilteredData.length / itemsPerPage);
 
   return (
-    <div className="animate-fade-in" style={{ position: 'relative' }}>
+    <div className="animate-fade-in" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Main Container */}
-      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 105px)', gap: '0.5rem' }}>
+      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '0.5rem', overflow: 'hidden' }}>
         {/* Top Control Bar Card */}
-        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
           
           {/* Left: Refresh, Switcher & KPI Cards */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%', flex: '1 1 auto', overflow: 'hidden' }}>
             <button 
               onClick={fetchSessions} 
               disabled={loading}
               title="Refresh Data"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} 
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', flexShrink: 0 }} 
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
             </button>
             
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div className="hide-scrollbar" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', flex: 1, paddingBottom: '0.1rem', WebkitOverflowScrolling: 'touch' }}>
               <div 
                 onClick={() => { setActiveTab('Sedang Online'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Sedang Online' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Sedang Online' ? 'var(--pioniar-primary)' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Sedang Online' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Sedang Online' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Sedang Online' ? 'var(--pioniar-primary)' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Sedang Online' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', whiteSpace: 'nowrap' }}
               >
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Sedang Online' ? 'var(--pioniar-primary)' : '#64748b', letterSpacing: '0.02em' }}>SEDANG ONLINE</span>
@@ -132,7 +133,7 @@ export default function WifiActiveSessions() {
               </div>
               <div 
                 onClick={() => { setActiveTab('Voucher Berjalan'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Voucher Berjalan' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Voucher Berjalan' ? '#f59e0b' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Voucher Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Voucher Berjalan' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Voucher Berjalan' ? '#f59e0b' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Voucher Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', whiteSpace: 'nowrap' }}
               >
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Voucher Berjalan' ? '#f59e0b' : '#64748b', letterSpacing: '0.02em' }}>VOUCHER BERJALAN</span>
@@ -141,31 +142,35 @@ export default function WifiActiveSessions() {
             </div>
           </div>
           
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', flex: '1 1 300px', justifyContent: 'flex-end' }}>
+            <div style={{ position: 'relative', flex: '1 1 150px' }}>
               <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
                 type="text" 
                 placeholder="Cari username, IP, MAC..." 
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{ padding: '0.45rem 1rem 0.45rem 2.5rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', width: '250px', fontSize: '0.85rem', outline: 'none', transition: 'all 0.2s' }}
+                style={{ padding: '0.45rem 1rem 0.45rem 2.5rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', width: '100%', fontSize: '0.85rem', outline: 'none', transition: 'all 0.2s' }}
               />
             </div>
           </div>
         </div>
 
         {/* Table Card */}
-        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', backgroundColor: '#ffffff' }}>
+        <div className="glass-panel table-responsive" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflowX: 'auto', overflowY: 'hidden', backgroundColor: '#ffffff' }}>
           {loading && sessions.length === 0 && runningVouchers.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-              <Loader2 size={32} className="animate-spin" style={{ margin: '0 auto', marginBottom: '1rem', color: 'var(--pioniar-primary)' }} />
-              Memuat data...
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '3rem', color: 'var(--pioniar-text-muted)' }}>
+              <HexLoader size={48} color="var(--pioniar-primary)" />
+              <p style={{ marginTop: '1rem' }}>Memuat data...</p>
             </div>
           ) : activeTab === 'Sedang Online' ? (
             filteredSessions.length === 0 ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-                {searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Tidak ada pengguna aktif saat ini.'}
+              <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
+                <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
+                  <Activity size={24} color="#94a3b8" />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
+                <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Tidak ada pengguna aktif saat ini.'}</div>
               </div>
             ) : (
               <div style={{ minWidth: '800px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -206,8 +211,12 @@ export default function WifiActiveSessions() {
             )
           ) : (
             filteredRunning.length === 0 ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-                {searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Tidak ada voucher yang sedang berjalan.'}
+              <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
+                <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
+                  <Activity size={24} color="#94a3b8" />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
+                <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Tidak ada voucher yang sedang berjalan.'}</div>
               </div>
             ) : (
               <div style={{ minWidth: '800px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>

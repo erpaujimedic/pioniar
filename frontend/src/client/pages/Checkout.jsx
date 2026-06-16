@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, Loader2, ArrowLeft } from 'lucide-react';
+import HexLoader from '../../components/HexLoader';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -64,7 +65,7 @@ export default function Checkout() {
             </p>
             
             <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', marginBottom: '1.5rem' }}>
-              <Loader2 className="animate-spin text-blue-600" size={40} />
+              <HexLoader size={48} color="#2563eb" />
               <p style={{ fontWeight: 600, color: '#1e40af' }}>Menunggu Pembayaran...</p>
             </div>
             

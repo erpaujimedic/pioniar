@@ -9,6 +9,18 @@ export default function DashboardOverview() {
   const [isRebooting, setIsRebooting] = useState(false);
   const [showRebootModal, setShowRebootModal] = useState(false);
   
+  const [antiLagEnabled, setAntiLagEnabled] = useState(false);
+  const [isTogglingLag, setIsTogglingLag] = useState(false);
+  
+  const [notification, setNotification] = useState(null);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+  
   // -- Network State --
   const [liveData, setLiveData] = useState({
     active_users: 0,
@@ -49,6 +61,13 @@ export default function DashboardOverview() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setSales(data);
+      })
+      .catch(err => console.error(err));
+      
+    fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/wifi/anti-lag/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'Success') setAntiLagEnabled(data.enabled);
       })
       .catch(err => console.error(err));
   }, []);
@@ -93,6 +112,27 @@ export default function DashboardOverview() {
     setTimeout(() => setIsRebooting(false), 30000); // 30s cooldown before allow click again
   };
 
+  const handleToggleAntiLag = async () => {
+    setIsTogglingLag(true);
+    try {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/wifi/anti-lag/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !antiLagEnabled })
+      });
+      const data = await res.json();
+      if (data.status === 'Success') {
+        setAntiLagEnabled(data.enabled);
+        setNotification({ type: 'success', message: data.message });
+      } else {
+        setNotification({ type: 'error', message: data.detail || 'Gagal mengubah status Anti-Lag' });
+      }
+    } catch (err) {
+      setNotification({ type: 'error', message: 'Terjadi kesalahan jaringan' });
+    }
+    setIsTogglingLag(false);
+  };
+
   const networkStats = [
     { label: `Pendapatan (${filter})`, value: formatRupiah(totalRevenue), icon: <DollarSign size={24} />, color: '#10b981' },
     { label: `Voucher Terjual (${filter})`, value: totalVouchers, icon: <Users size={24} />, color: '#3b82f6' },
@@ -130,9 +170,24 @@ export default function DashboardOverview() {
   );
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in hide-scrollbar" style={{ height: '100%', overflowY: 'auto', paddingRight: '0.25rem' }}>
       {/* Top Header Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: '1rem',
+        position: 'sticky',
+        top: '-1rem',
+        zIndex: 50,
+        backgroundColor: 'var(--pioniar-bg)',
+        paddingTop: '1rem',
+        paddingBottom: '1rem',
+        marginTop: '-1rem',
+        marginBottom: '1rem',
+        borderBottom: '1px solid var(--pioniar-border)'
+      }}>
         
         {/* Tab Switcher */}
         <div style={{ 
@@ -205,6 +260,43 @@ export default function DashboardOverview() {
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Aktivitas Network Terkini</h3>
             <p style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.875rem' }}>Sistem MikroTik terhubung dan termonitor secara real-time. Terakhir login: <strong>{liveData.latest_login}</strong></p>
           </div>
+          
+          {/* Anti-Lag Control */}
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Activity size={18} color={antiLagEnabled ? 'var(--pioniar-accent)' : 'var(--pioniar-text-muted)'} /> 
+                QoS Anti-Lag Gaming
+              </h3>
+              <p style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem', maxWidth: '600px', margin: 0, lineHeight: 1.5 }}>
+                Memprioritaskan ICMP (Ping) dan lalu lintas Game Online (seperti Mobile Legends, PUBG, FF) agar pemain tidak mengalami *lag* atau *ping merah* saat pengguna lain sedang mengunduh file besar.
+              </p>
+            </div>
+            <div>
+              <button 
+                onClick={handleToggleAntiLag} 
+                disabled={isTogglingLag || status === 'Offline'}
+                style={{ 
+                  backgroundColor: antiLagEnabled ? 'var(--pioniar-accent)' : '#e2e8f0', 
+                  color: antiLagEnabled ? '#fff' : '#64748b',
+                  border: 'none', 
+                  padding: '0.7rem 1.5rem', 
+                  borderRadius: '2rem', 
+                  fontWeight: 700, 
+                  fontSize: '0.85rem',
+                  cursor: (isTogglingLag || status === 'Offline') ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: antiLagEnabled ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
+                  opacity: (isTogglingLag || status === 'Offline') ? 0.6 : 1
+                }}
+              >
+                {isTogglingLag ? 'Memproses...' : (antiLagEnabled ? 'ON - Aktif' : 'OFF - Mati')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -254,6 +346,14 @@ export default function DashboardOverview() {
               </button>
             </div>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Notifications */}
+      {notification && createPortal(
+        <div className="animate-slide-up" style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', backgroundColor: notification.type === 'error' ? '#ef4444' : '#10b981', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2)', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, fontSize: '0.9rem' }}>
+          {notification.message}
         </div>,
         document.body
       )}

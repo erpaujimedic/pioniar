@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Search, RefreshCw, Trash2, Edit2, Loader2, Package, X } from 'lucide-react';
+import HexLoader from '../../components/HexLoader';
 
 export default function WifiProfileManager() {
   const [profiles, setProfiles] = useState([]);
@@ -11,7 +12,7 @@ export default function WifiProfileManager() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [formData, setFormData] = useState({ id: '', name: '', rate_limit: '', shared_users: '1', price: '' });
+  const [formData, setFormData] = useState({ id: '', name: '', rate_limit: '', shared_users: '1', price: '', validity: '' });
   const [deleteData, setDeleteData] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   
@@ -107,48 +108,48 @@ export default function WifiProfileManager() {
   const totalPages = Math.ceil(filteredProfiles.length / itemsPerPage);
 
   return (
-    <div className="animate-fade-in" style={{ position: 'relative' }}>
-
+    <div className="animate-fade-in" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Main Container */}
-      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 105px)', gap: '0.5rem' }}>
+      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '0.5rem', overflow: 'hidden' }}>
         
         {/* Top Control Bar Card */}
-        <div className="glass-panel" style={{ borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="hide-scrollbar glass-panel" style={{ borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1rem', display: 'flex', flexWrap: 'nowrap', gap: '0.5rem', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '0 0 auto' }}>
             <button 
-              className="btn btn-outline" 
               onClick={fetchProfiles} 
               disabled={loading}
               title="Refresh Data"
-              style={{ padding: '0.6rem' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', flexShrink: 0 }} 
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
             >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} color="#64748b" />
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} color="#64748b" />
             </button>
-            <div style={{ fontWeight: 600, color: 'var(--pioniar-text)', fontSize: '0.95rem' }}>Daftar Paket</div>
           </div>
           
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '0.5rem', alignItems: 'center', flex: '1 1 auto', justifyContent: 'flex-end', minWidth: 0 }}>
+            <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, maxWidth: '300px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input 
                 type="text" 
                 placeholder="Cari paket..." 
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{ padding: '0.6rem 1rem 0.6rem 2.5rem', borderRadius: '2rem', border: '1px solid var(--pioniar-border)', outline: 'none', width: '250px', fontSize: '0.9rem' }}
+                style={{ padding: '0.45rem 1rem 0.45rem 2.25rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', fontSize: '0.85rem', width: '100%', outline: 'none', transition: 'all 0.2s' }}
               />
             </div>
             <button 
-              className="btn btn-primary" 
               onClick={() => {
-                setFormData({ id: '', name: '', rate_limit: '', shared_users: '1', price: '' });
+                setFormData({ id: '', name: '', rate_limit: '', shared_users: '1', price: '', validity: '' });
                 setIsEditMode(false);
                 setShowModal(true);
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: 'var(--pioniar-primary)', border: '1px solid var(--pioniar-primary)', color: '#ffffff', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(40, 96, 134, 0.2)', flexShrink: 0, whiteSpace: 'nowrap' }} 
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1e4a68'} 
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--pioniar-primary)'}
             >
-              <Plus size={18} /> Tambah Paket
+              <Plus size={14} strokeWidth={3} /> Tambah Paket
             </button>
           </div>
         </div>
@@ -156,36 +157,42 @@ export default function WifiProfileManager() {
         {/* Table Card */}
         <div className="glass-panel" style={{ borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', backgroundColor: '#ffffff' }}>
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-              <Loader2 size={32} className="animate-spin" style={{ margin: '0 auto', marginBottom: '1rem', color: 'var(--pioniar-primary)' }} />
-              Memuat data paket...
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '3rem', color: 'var(--pioniar-text-muted)' }}>
+              <HexLoader size={48} color="var(--pioniar-primary)" />
+              <p style={{ marginTop: '1rem' }}>Memuat data paket...</p>
             </div>
           ) : filteredProfiles.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-              Tidak ada paket yang ditemukan.
+            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
+              <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
+                <Package size={24} color="#94a3b8" />
+              </div>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
+              <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian paket.' : 'Tidak ada paket yang terdaftar.'}</div>
             </div>
           ) : (
             <div style={{ minWidth: '800px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-              <div style={{ padding: '0.8rem 1.5rem', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 100px', fontWeight: 600, fontSize: '0.75rem', color: '#94a3b8', letterSpacing: '0.05em', borderBottom: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', textTransform: 'uppercase' }}>
+              <div style={{ padding: '0.8rem 1.5rem', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px', fontWeight: 600, fontSize: '0.75rem', color: '#94a3b8', letterSpacing: '0.05em', borderBottom: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', textTransform: 'uppercase' }}>
                 <div>NAMA PAKET</div>
                 <div>LIMIT KECEPATAN</div>
                 <div>MAKS. PERANGKAT</div>
+                <div>MASA AKTIF</div>
                 <div>HARGA (RP)</div>
                 <div style={{ textAlign: 'center' }}>AKSI</div>
               </div>
               
               <div style={{ backgroundColor: '#ffffff', flex: 1, overflowY: 'auto' }}>
                 {currentProfiles.map(p => (
-                  <div key={p.id} style={{ padding: '0.6rem 1.5rem', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 100px', alignItems: 'center', borderBottom: '1px solid var(--pioniar-border)', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <div key={p.id} style={{ padding: '0.6rem 1.5rem', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px', alignItems: 'center', borderBottom: '1px solid var(--pioniar-border)', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                     <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pioniar-text)' }}>{p.name}</span>
                     <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{p.rate_limit || 'Tidak dibatasi'}</span>
                     <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{p.shared_users}</span>
-                    <span style={{ color: 'var(--pioniar-success)', fontWeight: 600, fontSize: '0.9rem' }}>Rp {p.price.toLocaleString('id-ID')}</span>
+                    <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{p.validity || 'Tanpa Batas'}</span>
+                    <span style={{ color: 'var(--pioniar-success)', fontWeight: 600, fontSize: '0.9rem' }}>Rp {p.price?.toLocaleString('id-ID') || 0}</span>
                     
                     <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
                       <button 
                         onClick={() => {
-                          setFormData({ id: p.id, name: p.name, rate_limit: p.rate_limit, shared_users: p.shared_users, price: p.price });
+                          setFormData({ id: p.id, name: p.name, rate_limit: p.rate_limit, shared_users: p.shared_users, price: p.price, validity: p.validity || '' });
                           setIsEditMode(true);
                           setShowModal(true);
                         }}
@@ -281,6 +288,25 @@ export default function WifiProfileManager() {
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Maks. Perangkat (Shared Users) *</label>
                 <input required type="number" min="1" className="input-base" value={formData.shared_users} onChange={(e) => setFormData({...formData, shared_users: e.target.value})} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Batas Masa Aktif (Session Uptime)</label>
+                <select 
+                  className="input-base"
+                  value={formData.validity}
+                  onChange={(e) => setFormData({...formData, validity: e.target.value})}
+                  style={{ width: '100%' }}
+                >
+                  <option value="">Tanpa Batas Waktu</option>
+                  <option value="1m">1 Menit (Untuk Testing)</option>
+                  <option value="1h">1 Jam</option>
+                  <option value="3h">3 Jam</option>
+                  <option value="8h">8 Jam</option>
+                  <option value="1d">1 Hari (24 Jam)</option>
+                  <option value="3d">3 Hari</option>
+                  <option value="7d">1 Minggu</option>
+                  <option value="30d">1 Bulan (30 Hari)</option>
+                </select>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Harga Jual (Rp) *</label>

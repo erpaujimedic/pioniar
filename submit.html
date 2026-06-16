@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logging in...</title>
+</head>
+<body>
+    <form name="login" action="/login" method="post">
+        <input type="hidden" name="username" value="">
+        <input type="hidden" name="password" value="">
+        <input type="hidden" name="dst" value="">
+    </form>
+    <script type="text/javascript">
+        // Ambil data dari URL
+        const params = new URLSearchParams(window.location.search);
+        
+        // Masukin data ke form Mikrotik
+        document.login.username.value = params.get('username') || '';
+        document.login.password.value = params.get('password') || '';
+        document.login.dst.value = params.get('dst') || '';
+        
+        // Submit form otomatis pakai POST (cara resmi Mikrotik)
+        document.login.submit();
+    </script>
+</body>
+</html>
