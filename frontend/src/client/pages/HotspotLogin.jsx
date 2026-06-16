@@ -53,7 +53,7 @@ export default function HotspotLogin() {
     
     // Ambil alamat asli Hotspot dari URL, kalau gak ada baru pakai 192.168.100.1
     let loginUrl = searchParams.get('loginUrl');
-    let target = loginUrl ? loginUrl.replace('/login', '/submit.html') : 'http://192.168.100.1/submit.html';
+    let target = loginUrl ? loginUrl.replace('/login', '/submit.html') : 'http://pioniar.wifi/submit.html';
     
     // Pastikan kalau pakai HTTPS, ubah ke HTTP (karena hotspot lokal biasanya HTTP)
     if (target.startsWith('https://')) {

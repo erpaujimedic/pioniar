@@ -85,10 +85,10 @@ export default function HotspotStatus() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <a href="http://192.168.100.1/status" className="btn btn-secondary" style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem', fontWeight: 600, borderRadius: '0.375rem', backgroundColor: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1', textAlign: 'center', textDecoration: 'none', display: 'block', boxSizing: 'border-box' }}>
+            <a href="http://pioniar.wifi/status" className="btn btn-secondary" style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem', fontWeight: 600, borderRadius: '0.375rem', backgroundColor: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1', textAlign: 'center', textDecoration: 'none', display: 'block', boxSizing: 'border-box' }}>
               🔄 Refresh Status
             </a>
-            <a href="http://192.168.100.1/logout" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem', fontWeight: 600, borderRadius: '0.375rem', backgroundColor: '#ef4444', border: 'none', textAlign: 'center', textDecoration: 'none', display: 'block', color: 'white', boxSizing: 'border-box' }}>
+            <a href="http://pioniar.wifi/logout" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem', fontWeight: 600, borderRadius: '0.375rem', backgroundColor: '#ef4444', border: 'none', textAlign: 'center', textDecoration: 'none', display: 'block', color: 'white', boxSizing: 'border-box' }}>
               Disconnect / Logout
             </a>
           </div>

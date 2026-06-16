@@ -616,7 +616,7 @@ export default function WifiManager() {
                   Batal
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isGenerating} style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                  {isGenerating ? <Loader2 size={18} className="animate-spin" /> : 'Generate Sekarang'}
+                  {isGenerating ? <HexLoader size={20} color="#fff" /> : 'Generate Sekarang'}
                 </button>
               </div>
             </form>
