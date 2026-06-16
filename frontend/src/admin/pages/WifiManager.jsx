@@ -5,6 +5,7 @@ import HexLoader from '../../components/HexLoader';
 
 export default function WifiManager() {
   const [vouchers, setVouchers] = useState([]);
+  const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Modal & Form State
@@ -31,6 +32,21 @@ export default function WifiManager() {
 
   const fetchVouchers = () => {
     setLoading(true);
+    
+    // Fetch profiles first
+    fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/wifi/profiles')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setProfiles(data);
+          if (data.length > 0 && formData.plan === 'voucher_harian') {
+             // Keep default or set to first available if needed
+             setFormData(prev => ({...prev, plan: data[0].name}));
+          }
+        }
+      })
+      .catch(err => console.error("Failed to fetch profiles", err));
+
     fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/wifi/vouchers')
       .then(res => res.json())
       .then(data => {
