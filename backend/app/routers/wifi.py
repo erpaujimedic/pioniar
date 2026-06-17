@@ -208,7 +208,7 @@ def get_live_monitor():
         return {"status": "Success", "data": data}
     raise HTTPException(status_code=500, detail="Gagal mengambil data live monitor dari MikroTik")
 
-@router.delete("/{mt_id}")
+@router.delete("/vouchers/{mt_id}")
 def delete_voucher(mt_id: str, username: Optional[str] = None):
     success, msg = mikrotik_service.delete_voucher(mt_id)
     if success:
@@ -218,7 +218,7 @@ def delete_voucher(mt_id: str, username: Optional[str] = None):
         return {"status": "Success", "message": msg}
     raise HTTPException(status_code=500, detail=msg)
 
-@router.put("/{mt_id}")
+@router.put("/vouchers/{mt_id}")
 def edit_voucher(mt_id: str, data: EditVoucherRequest):
     success, msg = mikrotik_service.edit_voucher(mt_id, data.password, data.plan)
     if success:
