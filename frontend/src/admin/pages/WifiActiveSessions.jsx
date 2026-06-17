@@ -104,202 +104,167 @@ export default function WifiActiveSessions() {
 
   return (
     <div className="animate-fade-in" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+
       {/* Main Container */}
-      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '0.5rem', overflow: 'hidden' }}>
-        {/* Top Control Bar Card */}
-        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#ffffff', overflow: 'hidden' }}>
+        
+        {/* Action Bar */}
+        <div style={{ display: 'flex', gap: '12px', padding: '16px 20px', backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
           
-          {/* Left: Refresh, Switcher & KPI Cards */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%', flex: '1 1 auto', overflow: 'hidden' }}>
+          {/* Tabs Filter */}
+          <div style={{ display: 'flex', gap: '8px', padding: '4px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
             <button 
-              onClick={fetchSessions} 
-              disabled={loading}
-              title="Refresh Data"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', flexShrink: 0 }} 
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+              onClick={() => { setActiveTab('Sedang Online'); setCurrentPage(1); }}
+              style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: activeTab === 'Sedang Online' ? '#ffffff' : 'transparent', color: activeTab === 'Sedang Online' ? '#0f172a' : '#64748b', fontWeight: activeTab === 'Sedang Online' ? '600' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: activeTab === 'Sedang Online' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
             >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+              Sedang Online ({sessions.length})
             </button>
-            
-            <div className="hide-scrollbar" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', flex: 1, paddingBottom: '0.1rem', WebkitOverflowScrolling: 'touch' }}>
-              <div 
-                onClick={() => { setActiveTab('Sedang Online'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Sedang Online' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Sedang Online' ? 'var(--pioniar-primary)' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Sedang Online' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', whiteSpace: 'nowrap' }}
-              >
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Sedang Online' ? 'var(--pioniar-primary)' : '#64748b', letterSpacing: '0.02em' }}>SEDANG ONLINE</span>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginLeft: '0.25rem' }}>{sessions.length}</span>
-              </div>
-              <div 
-                onClick={() => { setActiveTab('Voucher Berjalan'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Voucher Berjalan' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Voucher Berjalan' ? '#f59e0b' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Voucher Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', whiteSpace: 'nowrap' }}
-              >
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Voucher Berjalan' ? '#f59e0b' : '#64748b', letterSpacing: '0.02em' }}>VOUCHER BERJALAN</span>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginLeft: '0.25rem' }}>{runningVouchers.length}</span>
-              </div>
-            </div>
+            <button 
+              onClick={() => { setActiveTab('Voucher Berjalan'); setCurrentPage(1); }}
+              style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: activeTab === 'Voucher Berjalan' ? '#ffffff' : 'transparent', color: activeTab === 'Voucher Berjalan' ? '#0f172a' : '#64748b', fontWeight: activeTab === 'Voucher Berjalan' ? '600' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: activeTab === 'Voucher Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+            >
+              Voucher Berjalan ({runningVouchers.length})
+            </button>
           </div>
           
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', flex: '1 1 300px', justifyContent: 'flex-end' }}>
-            <div style={{ position: 'relative', flex: '1 1 150px' }}>
-              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <div style={{ flex: 1 }}></div>
+
+          {/* Search & Refresh */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', padding: '6px 12px', borderRadius: '8px', transition: 'border-color 0.2s' }}>
+              <Search size={16} color="#64748b" />
               <input 
                 type="text" 
                 placeholder="Cari username, IP, MAC..." 
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{ padding: '0.45rem 1rem 0.45rem 2.5rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', width: '100%', fontSize: '0.85rem', outline: 'none', transition: 'all 0.2s' }}
+                style={{ border: 'none', outline: 'none', padding: '2px 8px', fontSize: '14px', width: '200px', backgroundColor: 'transparent', color: '#0f172a' }}
               />
             </div>
+            
+            <button 
+              onClick={fetchSessions} 
+              disabled={loading}
+              title="Refresh Data"
+              style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #e2e8f0', padding: '8px', borderRadius: '8px', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            </button>
           </div>
         </div>
 
-        {/* Table Card */}
-        <div className="glass-panel table-responsive" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflowX: 'auto', overflowY: 'hidden', backgroundColor: '#ffffff' }}>
-          {loading && sessions.length === 0 && runningVouchers.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '3rem', color: 'var(--pioniar-text-muted)' }}>
-              <HexLoader size={48} color="var(--pioniar-primary)" />
-              <p style={{ marginTop: '1rem' }}>Memuat data...</p>
-            </div>
-          ) : activeTab === 'Sedang Online' ? (
-            filteredSessions.length === 0 ? (
-              <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-                <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
-                  <Activity size={24} color="#94a3b8" />
-                </div>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
-                <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Tidak ada pengguna aktif saat ini.'}</div>
-              </div>
-            ) : (
-              <div style={{ minWidth: '800px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                <div style={{ padding: '0.8rem 1.5rem', display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1fr 100px', fontWeight: 600, fontSize: '0.75rem', color: '#94a3b8', letterSpacing: '0.05em', borderBottom: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', textTransform: 'uppercase' }}>
-                  <div>USERNAME</div>
-                  <div>IP ADDRESS</div>
-                  <div>MAC ADDRESS</div>
-                  <div>UPTIME</div>
-                  <div style={{ textAlign: 'center' }}>AKSI</div>
-                </div>
-                
-                <div style={{ backgroundColor: '#ffffff', flex: 1, overflowY: 'auto' }}>
-                  {activeTab === 'Sedang Online' && currentItems.map(s => (
-                    <div key={s['.id']} style={{ padding: '0.6rem 1.5rem', display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1fr 100px', alignItems: 'center', borderBottom: '1px solid var(--pioniar-border)', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pioniar-text)' }}>{s.user}</span>
-                      <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem', fontFamily: 'monospace' }}>{s.address}</span>
-                      <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem', fontFamily: 'monospace' }}>{s['mac-address']}</span>
-                      <span style={{ color: '#f59e0b', fontWeight: 500, fontSize: '0.85rem' }}>{s.uptime}</span>
-                      
-                      <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
-                        <button 
-                          onClick={() => {
-                            setKickData({ id: s['.id'], username: s.user });
-                            setShowKickModal(true);
-                          }}
-                          title="Kick / Putuskan Koneksi"
-                          style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.4rem 0.6rem', borderRadius: '0.25rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 600 }} 
-                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#fff' }} 
-                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444' }}
-                        >
-                          <ShieldAlert size={14} /> Kick
-                        </button>
+        {/* Premium Table */}
+        <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: '0 20px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', marginTop: '8px' }}>
+            <thead style={{ backgroundColor: '#ffffff', position: 'sticky', top: 0, zIndex: 1 }}>
+              {activeTab === 'Sedang Online' ? (
+                <tr>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Username</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>IP Address</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>MAC Address</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Uptime</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Aksi</th>
+                </tr>
+              ) : (
+                <tr>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Username</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Paket</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Login Pertama</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Selesai Pada</th>
+                  <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Total Uptime</th>
+                </tr>
+              )}
+            </thead>
+            <tbody>
+              {loading && sessions.length === 0 && runningVouchers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <Loader2 size={24} className="animate-spin" color="#3b82f6" />
+                      <span>Memuat data...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Tidak ada sesi aktif ditemukan.</td>
+                </tr>
+              ) : activeTab === 'Sedang Online' ? (
+                currentItems.map(s => (
+                  <tr key={s['.id']} style={{ cursor: 'pointer', transition: 'background-color 0.2s', borderBottom: '1px solid #f1f5f9' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td style={{ padding: '16px 12px', fontWeight: '600', color: '#0f172a' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
+                        {s.user}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          ) : (
-            filteredRunning.length === 0 ? (
-              <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-                <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
-                  <Activity size={24} color="#94a3b8" />
-                </div>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
-                <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Tidak ada voucher yang sedang berjalan.'}</div>
-              </div>
-            ) : (
-              <div style={{ minWidth: '800px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                <div style={{ padding: '0.8rem 1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', fontWeight: 600, fontSize: '0.75rem', color: '#94a3b8', letterSpacing: '0.05em', borderBottom: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', textTransform: 'uppercase' }}>
-                  <div>USERNAME</div>
-                  <div>PAKET</div>
-                  <div>LOGIN PERTAMA</div>
-                  <div>EXPIRES AT</div>
-                  <div>UPTIME (TOTAL)</div>
-                </div>
-                
-                <div style={{ backgroundColor: '#ffffff', flex: 1, overflowY: 'auto' }}>
-                  {activeTab === 'Voucher Berjalan' && currentItems.map(v => (
-                    <div key={v.code} style={{ padding: '0.6rem 1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', alignItems: 'center', borderBottom: '1px solid var(--pioniar-border)', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pioniar-text)' }}>{v.code}</span>
-                      <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{v.plan}</span>
-                      <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{formatTime(v.first_used_at)}</span>
-                      <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '0.85rem' }}>{formatTime(v.expires_at)}</span>
-                      <span style={{ color: '#f59e0b', fontWeight: 500, fontSize: '0.85rem' }}>{v.uptime}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          )}
+                    </td>
+                    <td style={{ padding: '16px 12px', color: '#475569', fontFamily: 'monospace' }}>{s.address}</td>
+                    <td style={{ padding: '16px 12px', color: '#475569', fontFamily: 'monospace' }}>{s['mac-address']}</td>
+                    <td style={{ padding: '16px 12px', color: '#10b981', fontWeight: '500' }}>{s.uptime}</td>
+                    <td style={{ padding: '16px 12px', textAlign: 'center' }}>
+                      <button onClick={() => { setKickData({ id: s['.id'], username: s.user }); setShowKickModal(true); }} title="Kick User" style={{ background: '#fef2f2', border: '1px solid #fee2e2', cursor: 'pointer', padding: '6px', borderRadius: '6px', transition: 'all 0.2s', display: 'inline-flex' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#fee2e2'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#fef2f2'}>
+                        <ShieldAlert size={16} color="#ef4444" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                currentItems.map(v => (
+                  <tr key={v.code} style={{ cursor: 'pointer', transition: 'background-color 0.2s', borderBottom: '1px solid #f1f5f9' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td style={{ padding: '16px 12px', fontWeight: '500', color: '#0f172a' }}>{v.code}</td>
+                    <td style={{ padding: '16px 12px', color: '#475569' }}><span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '13px' }}>{v.plan}</span></td>
+                    <td style={{ padding: '16px 12px', color: '#475569' }}>{formatTime(v.first_used_at)}</td>
+                    <td style={{ padding: '16px 12px', color: '#ef4444', fontWeight: '500' }}>{formatTime(v.expires_at)}</td>
+                    <td style={{ padding: '16px 12px', color: '#f59e0b', fontWeight: '500' }}>{v.uptime}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination Footer */}
-          {!loading && currentFilteredData.length > 0 && (
-            <div style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--pioniar-text-muted)' }}>
-                  <span>Tampilkan</span>
-                  <select 
-                    value={itemsPerPage} 
-                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                    style={{ padding: '0.2rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: 'var(--pioniar-bg)', color: 'var(--pioniar-text)', fontSize: '0.8rem', outline: 'none' }}
-                  >
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                    <option value={150}>150</option>
-                  </select>
-                  <span>data</span>
-                </div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--pioniar-text-muted)', borderLeft: '1px solid var(--pioniar-border)', paddingLeft: '0.75rem' }}>
-                  Menampilkan {currentFilteredData.length === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, currentFilteredData.length)} dari {currentFilteredData.length}
-                </span>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: currentPage === 1 ? 'transparent' : '#ffffff', color: currentPage === 1 ? '#cbd5e1' : 'var(--pioniar-text)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
-                >
-                  Prev
-                </button>
-                <button 
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: currentPage === totalPages || totalPages === 0 ? 'transparent' : '#ffffff', color: currentPage === totalPages || totalPages === 0 ? '#cbd5e1' : 'var(--pioniar-text)', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-
+        {/* Pagination Status Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff', fontSize: '14px', color: '#475569' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>Menampilkan {currentFilteredData.length > 0 ? `${indexOfFirstItem + 1} - ${Math.min(indexOfLastItem, currentFilteredData.length)} dari ` : ''}<strong>{currentFilteredData.length}</strong> total item</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <span>Per Halaman:</span>
+               <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc' }}>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={150}>150</option>
+               </select>
+             </div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : '#ffffff', color: currentPage === 1 ? '#cbd5e1' : '#475569', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Sebelumnya</button>
+               <span style={{ fontWeight: '500', color: '#0f172a' }}>{currentPage} / {totalPages || 1}</span>
+               <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f8fafc' : '#ffffff', color: currentPage === totalPages || totalPages === 0 ? '#cbd5e1' : '#475569', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Selanjutnya</button>
+             </div>
+          </div>
         </div>
       </div>
 
-      {/* Kick Modal */}
+      {/* Kick Modal (Premium Style) */}
       {showKickModal && kickData && createPortal(
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '400px', borderRadius: 'var(--radius-xl)', padding: '2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '50%' }}><ShieldAlert size={40} color="#ef4444" /></div>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '100%', maxWidth: '360px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            
+            <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <ShieldAlert size={24} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: '0 0 8px 0' }}>Kick Pengguna</h3>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
+                Putuskan koneksi <strong>{kickData.username}</strong> dari jaringan WiFi? Pengguna harus login ulang.
+              </p>
             </div>
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Kick {kickData.username}?</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Pengguna akan langsung terputus dari jaringan WiFi dan harus login kembali.</p>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="button" className="btn" onClick={() => { setShowKickModal(false); setKickData(null); }} style={{ flex: 1 }}>Batal</button>
-              <button type="button" className="btn" onClick={confirmKick} disabled={isKicking} style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff', border: 'none', display: 'flex', justifyContent: 'center' }}>
-                {isKicking ? <Loader2 size={18} className="animate-spin" /> : 'Ya, Kick User'}
+            
+            <div style={{ padding: '24px', display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
+              <button type="button" onClick={() => { setShowKickModal(false); setKickData(null); }} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
+              <button type="button" onClick={confirmKick} disabled={isKicking} style={{ flex: 1, padding: '10px', border: 'none', backgroundColor: '#ef4444', color: '#ffffff', cursor: isKicking ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isKicking ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(239, 68, 68, 0.2)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {isKicking ? <Loader2 size={16} className="animate-spin" /> : 'Ya, Kick User'}
               </button>
             </div>
           </div>

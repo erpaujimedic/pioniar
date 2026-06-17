@@ -153,12 +153,14 @@ class MikrotikService:
                 if active_count > 0:
                     latest_login = active_users[-1].get('user', 'Guest')
                     
-                # 2. Resource (Uptime, CPU, Memory)
+                # 2. Resource (Uptime, CPU, Memory, HDD, Board)
                 resource = api.get_resource('/system/resource')
                 sys_res = resource.get()
                 uptime = '00:00:00'
                 cpu_load = '0'
                 memory_usage = '0 MB'
+                board_name = 'Unknown'
+                hdd_usage = '0 / 0 MB'
                 
                 if sys_res:
                     uptime = sys_res[0].get('uptime', '00:00:00')
@@ -167,6 +169,13 @@ class MikrotikService:
                     total_mem = int(sys_res[0].get('total-memory', 1)) # hindari div by zero
                     used_mb = round((total_mem - free_mem) / 1024 / 1024, 1)
                     memory_usage = f"{used_mb} MB"
+                    
+                    board_name = sys_res[0].get('board-name', 'MikroTik')
+                    free_hdd = int(sys_res[0].get('free-hdd-space', 0))
+                    total_hdd = int(sys_res[0].get('total-hdd-space', 1))
+                    used_hdd_mb = round((total_hdd - free_hdd) / 1024 / 1024, 1)
+                    total_hdd_mb = round(total_hdd / 1024 / 1024, 1)
+                    hdd_usage = f"{used_hdd_mb} MB"
                 
                 # 3. Traffic Speed (ether2)
                 speed_mbps = 0
@@ -186,7 +195,9 @@ class MikrotikService:
                     "uptime": uptime,
                     "speed_mbps": speed_mbps,
                     "cpu_load": cpu_load,
-                    "memory_usage": memory_usage
+                    "memory_usage": memory_usage,
+                    "board_name": board_name,
+                    "hdd_usage": hdd_usage
                 }
         except Exception as e:
             print(f"[MikroTik Error] get_monitor_data: {e}")

@@ -38,16 +38,8 @@ function App() {
           <Route path="about-me" element={<AboutPage />} />
         </Route>
 
-        {/* Admin Routes (PIONIAR Super Admin) */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<DashboardOverview />} />
-          <Route path="wifi" element={<WifiManager />} />
-          <Route path="wifi/packages" element={<WifiProfileManager />} />
-          <Route path="wifi/active" element={<WifiActiveSessions />} />
-          <Route path="wifi/reporting" element={<WifiReporting />} />
-          <Route path="livestock" element={<Placeholder title="Pengelolaan Ternak" />} />
-          <Route path="snack" element={<Placeholder title="Penjualan Snack Tradisional" />} />
-        </Route>
+        {/* Admin Routes (PIONIAR Super Admin - MDI Window Manager) */}
+        <Route path="/admin/*" element={<AdminLayout />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

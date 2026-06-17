@@ -49,7 +49,7 @@ export default function HotspotLogin() {
     const passValue = loginMode === 'voucher' ? username : password;
     
     // Redirect to submit.html (hosted on Mikrotik) to perform native POST
-    const dstUrl = encodeURIComponent('https://pioniar.web.app/?status=success');
+    const dstUrl = encodeURIComponent('https://pioniar.com/portalinformation?status=success');
     
     // Ambil alamat asli Hotspot dari URL, kalau gak ada baru pakai 192.168.100.1
     let loginUrl = searchParams.get('loginUrl');

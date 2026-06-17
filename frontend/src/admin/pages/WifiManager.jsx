@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, MoreVertical, Server, X, Loader2, RefreshCw, CheckCircle, AlertCircle, ChevronDown, Printer, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Minus, Search, MoreVertical, Server, X, Loader2, RefreshCw, CheckCircle, AlertCircle, ChevronDown, Printer, Trash2, Edit2 } from 'lucide-react';
 import HexLoader from '../../components/HexLoader';
 
 export default function WifiManager() {
@@ -12,6 +12,7 @@ export default function WifiManager() {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editData, setEditData] = useState({ id: '', username: '', password: '', plan: '' });
@@ -19,7 +20,7 @@ export default function WifiManager() {
   const [generateMode, setGenerateMode] = useState('voucher'); // voucher, member, bulk
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [formData, setFormData] = useState({ username: '', password: '', plan: 'voucher_harian', quantity: 10 });
+  const [formData, setFormData] = useState({ username: '', password: '', plan: 'voucher_harian', quantity: 10, char_type: 'numeric', length: 4, prefix: 'PION-' });
   const [activeTab, setActiveTab] = useState('Tersedia'); // Tab filter
   const [isPlanDropdownOpen, setIsPlanDropdownOpen] = useState(false);
   const [printData, setPrintData] = useState([]);
@@ -83,7 +84,7 @@ export default function WifiManager() {
     try {
       const endpoint = (import.meta.env.VITE_API_BASE_URL || '') + (generateMode === 'bulk' ? '/api/wifi/bulk-generate' : '/api/wifi/generate');
       const body = generateMode === 'bulk' 
-        ? { quantity: formData.quantity, profile: formData.plan }
+        ? { quantity: formData.quantity, profile: formData.plan, char_type: formData.char_type, length: formData.length, prefix: formData.prefix }
         : generateMode === 'member'
           ? { username: formData.username, password: formData.password, profile: formData.plan }
           : { username: formData.username, password: formData.username, profile: formData.plan };
@@ -104,7 +105,7 @@ export default function WifiManager() {
         } else {
             setNotification({ type: 'success', message: `Voucher ${formData.username} berhasil dibuat!` });
             setShowModal(false);
-            setFormData({ username: '', password: '', plan: 'voucher_harian', quantity: 10 });
+            setFormData({ username: '', password: '', plan: 'voucher_harian', quantity: 10, char_type: 'numeric', length: 4, prefix: 'PION-' });
         }
         fetchVouchers();
       } else {
@@ -153,8 +154,6 @@ export default function WifiManager() {
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Yakin ingin menghapus ${selectedVouchers.length} voucher terpilih secara permanen?`)) return;
-    
     setIsDeleting(true);
     let successCount = 0;
     
@@ -172,6 +171,7 @@ export default function WifiManager() {
     setNotification({ type: 'success', message: `${successCount} dari ${vouchersToDelete.length} voucher berhasil dihapus` });
     setSelectedVouchers([]);
     setIsDeleting(false);
+    setShowBulkDeleteModal(false);
     fetchVouchers();
   };
 
@@ -218,6 +218,18 @@ export default function WifiManager() {
       console.error('Failed to mark printed', err);
     }
   };
+
+  // Auto-print when printData is set
+  useEffect(() => {
+    if (printData.length > 0) {
+      handleMarkPrinted(printData.map(v => v.username));
+      const timer = setTimeout(() => {
+        window.print();
+        setPrintData([]);
+      }, 500); // 500ms delay to ensure DOM is updated and printable-voucher-area is rendered
+      return () => clearTimeout(timer);
+    }
+  }, [printData]);
 
   // Pagination & Filtering Logic
   const filteredVouchers = vouchers.filter(v => {
@@ -276,554 +288,411 @@ export default function WifiManager() {
         document.body
       )}
 
-      {/* Voucher Table Section (EAM Style) */}
-      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '0.5rem', overflow: 'hidden' }}>
-        {/* Top Control Bar Card */}
-        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+      {/* Voucher Table Section (Premium SaaS Style) */}
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#ffffff', overflow: 'hidden' }}>
+        {/* Action Bar */}
+        <div style={{ display: 'flex', gap: '12px', padding: '16px 20px', backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+          <button onClick={() => setShowModal(true)} style={{ backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#2563eb'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#3b82f6'}>
+            <Plus size={16} /> Generate Baru
+          </button>
           
-          {/* Left: Refresh, Switcher & KPI Cards */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%', flex: '1 1 auto', overflow: 'hidden' }}>
-            <button onClick={handleSync} title="Sync MikroTik" disabled={isSyncing} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', flexShrink: 0 }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}>
-              {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-            </button>
-            
-            {/* KPI Cards / Tabs */}
-            <div className="hide-scrollbar" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', flex: 1, paddingBottom: '0.1rem', WebkitOverflowScrolling: 'touch' }}>
-              <div 
-                onClick={() => { setActiveTab('Tersedia'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Tersedia' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Tersedia' ? '#10b981' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Tersedia' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
-              >
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Tersedia' ? '#10b981' : '#64748b', letterSpacing: '0.02em' }}>TERSEDIA</span>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginLeft: '0.25rem' }}>{totalTersedia}</span>
-              </div>
-              <div 
-                onClick={() => { setActiveTab('Berjalan'); setCurrentPage(1); }}
-                style={{ cursor: 'pointer', backgroundColor: activeTab === 'Berjalan' ? '#ffffff' : '#f8fafc', border: '1px solid', borderColor: activeTab === 'Berjalan' ? '#f59e0b' : 'var(--pioniar-border)', padding: '0.35rem 0.75rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: activeTab === 'Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
-              >
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: activeTab === 'Berjalan' ? '#f59e0b' : '#64748b', letterSpacing: '0.02em' }}>BERJALAN</span>
-                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginLeft: '0.25rem' }}>{totalBerjalan}</span>
-              </div>
-            </div>
-          </div>
-            
-          {/* Right: Search & Generate */}
-          <div style={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center', gap: '0.5rem', flex: '1 1 300px', justifyContent: 'flex-end', maxWidth: '100%' }}>
-            {selectedVouchers.length > 0 && (
-              <>
-                <button 
-                  onClick={() => {
-                    const toPrint = vouchers.filter(v => selectedVouchers.includes(v.code)).map(v => ({ username: v.code, password: v.code, plan: v.plan }));
-                    setPrintData(toPrint);
-                    setSelectedVouchers([]);
-                  }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: '#fff', border: '1px solid var(--pioniar-border)', color: 'var(--pioniar-text)', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)', flexShrink: 0, whiteSpace: 'nowrap' }} 
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-                >
-                  <Printer size={15} /> Cetak ({selectedVouchers.length})
-                </button>
-                <button 
-                  onClick={handleBulkDelete}
-                  disabled={isDeleting}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0, whiteSpace: 'nowrap' }} 
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'} 
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                >
-                  {isDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />} Hapus ({selectedVouchers.length})
-                </button>
-              </>
-            )}
-
-            <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, maxWidth: '300px' }}>
-              <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-              <input 
-                type="text" 
-                placeholder="Cari voucher..." 
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{ padding: '0.45rem 1rem 0.45rem 2.25rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', fontSize: '0.85rem', width: '100%', outline: 'none', transition: 'all 0.2s' }}
-              />
-            </div>
-            
-            <button onClick={() => setShowModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: 'var(--pioniar-primary)', border: '1px solid var(--pioniar-primary)', color: '#ffffff', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(40, 96, 134, 0.2)', flexShrink: 0, whiteSpace: 'nowrap' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1e4a68'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--pioniar-primary)'}>
-              <Plus size={14} strokeWidth={3} /> Generate
-            </button>
-          </div>
-        </div>
-
-        {/* Table Card */}
-        <div className="glass-panel table-responsive" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflowX: 'auto', overflowY: 'hidden', backgroundColor: '#ffffff' }}>
-          <div style={{ minWidth: '600px', display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
-          {/* EAM Standalone Table Header Row */}
-          <div style={{ padding: '0.75rem 1.5rem', display: 'grid', gridTemplateColumns: '40px 2fr 2fr 1fr 100px', borderBottom: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff', alignItems: 'center' }}>
-          <input 
-            type="checkbox" 
-            checked={currentVouchers.length > 0 && selectedVouchers.length === currentVouchers.length}
-            onChange={(e) => {
-              if (e.target.checked) setSelectedVouchers(currentVouchers.map(v => v.code));
-              else setSelectedVouchers([]);
+          <button onClick={() => setShowBulkDeleteModal(true)} disabled={selectedVouchers.length === 0} style={{ backgroundColor: '#ffffff', color: '#ef4444', border: '1px solid #fee2e2', padding: '8px 16px', borderRadius: '8px', cursor: selectedVouchers.length === 0 ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '600', opacity: selectedVouchers.length === 0 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }} onMouseOver={e=>{if(selectedVouchers.length>0) e.currentTarget.style.backgroundColor='#fef2f2'}} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}>
+            <Minus size={16} /> Hapus ({selectedVouchers.length})
+          </button>
+          
+          <div style={{ width: '1px', height: '20px', backgroundColor: '#e2e8f0', margin: '0 4px' }}></div>
+          
+          <button 
+            onClick={() => {
+              const toPrint = vouchers.filter(v => selectedVouchers.includes(v.code)).map(v => ({ username: v.code, password: v.code, plan: v.plan }));
+              setPrintData(toPrint);
+              setSelectedVouchers([]);
             }}
-            style={{ cursor: 'pointer' }}
-          />
-          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kode Voucher</span>
-          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Paket (Plan)</span>
-          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</span>
-          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Aksi</span>
+            disabled={selectedVouchers.length === 0} 
+            style={{ backgroundColor: '#ffffff', color: '#475569', border: '1px solid #e2e8f0', padding: '8px 16px', borderRadius: '8px', cursor: selectedVouchers.length === 0 ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '500', opacity: selectedVouchers.length === 0 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
+            onMouseOver={e=>{if(selectedVouchers.length>0) e.currentTarget.style.backgroundColor='#f8fafc'}} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}
+          >
+            <Printer size={16} /> Print
+          </button>
+          
+          <button 
+            onClick={() => {
+              if (selectedVouchers.length === 1) {
+                const v = vouchers.find(v => v.code === selectedVouchers[0]);
+                if (v) {
+                  setEditData({ id: v.id, username: v.code, password: '', plan: v.plan });
+                  setShowEditModal(true);
+                }
+              }
+            }}
+            disabled={selectedVouchers.length !== 1} 
+            style={{ backgroundColor: '#ffffff', color: '#475569', border: '1px solid #e2e8f0', padding: '8px 16px', borderRadius: '8px', cursor: selectedVouchers.length !== 1 ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '500', opacity: selectedVouchers.length !== 1 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
+            onMouseOver={e=>{if(selectedVouchers.length===1) e.currentTarget.style.backgroundColor='#f8fafc'}} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}
+          >
+            <Edit2 size={16} /> Edit
+          </button>
+
+          <div style={{ flex: 1 }}></div>
+
+          {/* Filter & Search */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Pill Tabs for Status */}
+            <div style={{ display: 'flex', gap: '4px', padding: '4px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <button 
+                onClick={() => { setActiveTab('Tersedia'); setCurrentPage(1); }} 
+                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', backgroundColor: activeTab === 'Tersedia' ? '#ffffff' : 'transparent', color: activeTab === 'Tersedia' ? '#0f172a' : '#64748b', fontWeight: activeTab === 'Tersedia' ? '600' : '500', fontSize: '13px', cursor: 'pointer', boxShadow: activeTab === 'Tersedia' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                Tersedia 
+                <span style={{ backgroundColor: activeTab === 'Tersedia' ? '#f1f5f9' : '#e2e8f0', color: activeTab === 'Tersedia' ? '#0f172a' : '#475569', padding: '2px 6px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+                  {totalTersedia}
+                </span>
+              </button>
+              <button 
+                onClick={() => { setActiveTab('Berjalan'); setCurrentPage(1); }} 
+                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', backgroundColor: activeTab === 'Berjalan' ? '#ffffff' : 'transparent', color: activeTab === 'Berjalan' ? '#0f172a' : '#64748b', fontWeight: activeTab === 'Berjalan' ? '600' : '500', fontSize: '13px', cursor: 'pointer', boxShadow: activeTab === 'Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                Berjalan 
+                <span style={{ backgroundColor: activeTab === 'Berjalan' ? '#f1f5f9' : '#e2e8f0', color: activeTab === 'Berjalan' ? '#0f172a' : '#475569', padding: '2px 6px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+                  {totalBerjalan}
+                </span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', padding: '6px 12px', borderRadius: '8px', transition: 'border-color 0.2s' }}>
+              <Search size={16} color="#64748b" />
+              <input type="text" placeholder="Cari voucher..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} style={{ border: 'none', outline: 'none', padding: '2px 8px', fontSize: '14px', width: '160px', backgroundColor: 'transparent', color: '#0f172a' }} />
+            </div>
+
+            <button onClick={handleSync} disabled={isSyncing} title="Sync MikroTik" style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #e2e8f0', padding: '8px', borderRadius: '8px', cursor: isSyncing ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}>
+               {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            </button>
+          </div>
         </div>
-        
-        <div style={{ backgroundColor: '#ffffff', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--pioniar-text-muted)', padding: '3rem' }}>
-              <HexLoader size={48} color="var(--pioniar-primary)" />
-              <p style={{ marginTop: '1rem' }}>Memuat data dari MikroTik...</p>
-            </div>
-          ) : activeTab === 'Voucher Tersedia' && filteredVouchers.length === 0 ? (
-            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-              <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
-                <Server size={24} color="#94a3b8" />
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
-              <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian voucher.' : 'Belum ada voucher tersedia. Silakan buat voucher baru.'}</div>
-            </div>
-          ) : activeTab === 'Voucher Aktif' && filteredVouchers.length === 0 ? (
-            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-              <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
-                <Server size={24} color="#94a3b8" />
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
-              <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian.' : 'Belum ada user yang terhubung ke jaringan saat ini.'}</div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                {currentVouchers.map(v => (
-                  <div key={v.id || v.code} style={{ padding: '0.4rem 1.5rem', display: 'grid', gridTemplateColumns: '40px 2fr 2fr 1fr 100px', alignItems: 'center', borderBottom: '1px solid var(--pioniar-border)', transition: 'background-color 0.2s', cursor: 'pointer', backgroundColor: v.is_printed === false ? 'rgba(250, 204, 21, 0.08)' : 'transparent' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = v.is_printed === false ? 'rgba(250, 204, 21, 0.08)' : 'transparent'}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedVouchers.includes(v.code)}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        if (e.target.checked) setSelectedVouchers([...selectedVouchers, v.code]);
-                        else setSelectedVouchers(selectedVouchers.filter(code => code !== v.code));
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pioniar-text)' }}>{v.code}</span>
-                    <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{v.plan}</span>
-                    <span>
-                      <span style={{ 
-                        padding: '0.25rem 0.6rem', 
-                        borderRadius: '1rem', 
-                        fontSize: '0.7rem', 
-                        fontWeight: 700,
-                        backgroundColor: v.status === 'Aktif' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        color: v.status === 'Aktif' ? 'var(--pioniar-accent)' : 'var(--pioniar-warning)'
-                      }}>
+
+        {/* Premium Table */}
+        <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: '0 20px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', marginTop: '8px' }}>
+            <thead style={{ backgroundColor: '#ffffff', position: 'sticky', top: 0, zIndex: 1 }}>
+              <tr>
+                <th style={{ width: '40px', padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'center' }}>
+                  <input type="checkbox" checked={currentVouchers.length > 0 && selectedVouchers.length === currentVouchers.length} onChange={(e) => { if (e.target.checked) setSelectedVouchers(currentVouchers.map(v => v.code)); else setSelectedVouchers([]); }} style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#3b82f6' }} />
+                </th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Nama Voucher</th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Paket Layanan</th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <Loader2 size={24} className="animate-spin" color="#3b82f6" />
+                      <span>Memuat data...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : currentVouchers.length === 0 ? (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Belum ada data voucher.</td>
+                </tr>
+              ) : (
+                currentVouchers.map(v => (
+                  <tr key={v.id || v.code} onClick={() => { if (selectedVouchers.includes(v.code)) setSelectedVouchers(selectedVouchers.filter(c => c !== v.code)); else setSelectedVouchers([...selectedVouchers, v.code]); }} style={{ cursor: 'pointer', backgroundColor: selectedVouchers.includes(v.code) ? '#eff6ff' : 'transparent', borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => { if (!selectedVouchers.includes(v.code)) e.currentTarget.style.backgroundColor = '#f8fafc' }} onMouseLeave={e => { if (!selectedVouchers.includes(v.code)) e.currentTarget.style.backgroundColor = 'transparent' }}>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      <input type="checkbox" checked={selectedVouchers.includes(v.code)} onChange={(e) => { e.stopPropagation(); if (e.target.checked) setSelectedVouchers([...selectedVouchers, v.code]); else setSelectedVouchers(selectedVouchers.filter(c => c !== v.code)); }} style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#3b82f6' }} />
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: '500', color: '#0f172a' }}>{v.code}</td>
+                    <td style={{ padding: '12px', color: '#475569' }}>
+                      <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '13px' }}>{v.plan}</span>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: v.status === 'Aktif' ? '#ecfdf5' : '#fffbeb', color: v.status === 'Aktif' ? '#10b981' : '#f59e0b', padding: '4px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '500' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: v.status === 'Aktif' ? '#10b981' : '#f59e0b' }}></div>
                         {v.status}
                       </span>
-                    </span>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '0.25rem' }}>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPrintData([{ username: v.code, password: v.code, plan: v.plan }]);
-                        }}
-                        title="Cetak Karcis"
-                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '0.4rem', borderRadius: '0.25rem', transition: 'all 0.2s' }} 
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.1)'; e.currentTarget.style.color = 'var(--pioniar-accent)' }} 
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b' }}
-                      >
-                        <Printer size={15} />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditData({ id: v.id, username: v.code, password: '', plan: v.plan });
-                          setShowEditModal(true);
-                        }}
-                        title="Edit Voucher"
-                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '0.4rem', borderRadius: '0.25rem', transition: 'all 0.2s' }} 
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.1)'; e.currentTarget.style.color = 'var(--pioniar-warning)' }} 
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b' }}
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteData({ id: v.id, username: v.code });
-                          setShowDeleteModal(true);
-                        }}
-                        title="Hapus Voucher"
-                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '0.4rem', borderRadius: '0.25rem', transition: 'all 0.2s' }} 
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444' }} 
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b' }}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination Status Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff', fontSize: '14px', color: '#475569' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>Menampilkan {currentVouchers.length > 0 ? `${indexOfFirstItem + 1} - ${Math.min(indexOfLastItem, filteredVouchers.length)} dari ` : ''}<strong>{filteredVouchers.length}</strong> total item</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <span>Per Halaman:</span>
+               <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc' }}>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={500}>500</option>
+               </select>
+             </div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : '#ffffff', color: currentPage === 1 ? '#cbd5e1' : '#475569', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Sebelumnya</button>
+               <span style={{ fontWeight: '500', color: '#0f172a' }}>{currentPage} / {totalPages || 1}</span>
+               <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f8fafc' : '#ffffff', color: currentPage === totalPages || totalPages === 0 ? '#cbd5e1' : '#475569', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Selanjutnya</button>
+             </div>
+          </div>
+        </div>
+      </div>
+      {/* Generate Voucher Modal (Premium Style) */}
+      {showModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '100%', maxWidth: '480px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Plus size={18} />
+                </div>
+                Generate Voucher
+              </div>
+              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px', borderRadius: '6px', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#e2e8f0'} onMouseOut={e=>e.currentTarget.style.backgroundColor='transparent'}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div style={{ padding: '24px' }}>
+              {/* Tabs */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '4px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
+                <button 
+                  type="button"
+                  onClick={() => setGenerateMode('voucher')}
+                  style={{ flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: generateMode === 'voucher' ? '#ffffff' : 'transparent', color: generateMode === 'voucher' ? '#0f172a' : '#64748b', fontWeight: generateMode === 'voucher' ? '700' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: generateMode === 'voucher' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}
+                >Voucher</button>
+                <button 
+                  type="button"
+                  onClick={() => setGenerateMode('member')}
+                  style={{ flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: generateMode === 'member' ? '#ffffff' : 'transparent', color: generateMode === 'member' ? '#0f172a' : '#64748b', fontWeight: generateMode === 'member' ? '700' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: generateMode === 'member' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}
+                >Member</button>
+                <button 
+                  type="button"
+                  onClick={() => setGenerateMode('bulk')}
+                  style={{ flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: generateMode === 'bulk' ? '#ffffff' : 'transparent', color: generateMode === 'bulk' ? '#0f172a' : '#64748b', fontWeight: generateMode === 'bulk' ? '700' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: generateMode === 'bulk' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}
+                >Bulk</button>
+              </div>
+              
+              <form onSubmit={handleGenerate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {generateMode === 'voucher' ? (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Kode Voucher</label>
+                    <input 
+                      type="text" 
+                      required={generateMode === 'voucher'}
+                      placeholder="Contoh: PION123"
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value.replace(/\s+/g, '')})}
+                      style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={e=>e.currentTarget.style.borderColor='#3b82f6'}
+                      onBlur={e=>e.currentTarget.style.borderColor='#cbd5e1'}
+                    />
+                    <p style={{ fontSize: '12px', color: '#64748b', marginTop: '6px', margin: '6px 0 0 0' }}>*Tanpa spasi. Kode ini berlaku sebagai username & password.</p>
+                  </div>
+                ) : generateMode === 'member' ? (
+                  <>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Username</label>
+                      <input 
+                        type="text" 
+                        required={generateMode === 'member'}
+                        placeholder="Contoh: eepridwan"
+                        value={formData.username}
+                        onChange={(e) => setFormData({...formData, username: e.target.value.replace(/\s+/g, '')})}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Password</label>
+                      <input 
+                        type="text" 
+                        required={generateMode === 'member'}
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value.replace(/\s+/g, '')})}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Jumlah</label>
+                        <input type="number" min="1" max="500" required value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || ''})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Panjang Kode</label>
+                        <input type="number" min="3" max="12" value={formData.length} onChange={(e) => setFormData({...formData, length: parseInt(e.target.value) || 4})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Awalan (Prefix)</label>
+                        <input type="text" placeholder="Opsional" value={formData.prefix} onChange={(e) => setFormData({...formData, prefix: e.target.value.replace(/\s+/g, '')})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Karakter</label>
+                        <select value={formData.char_type} onChange={(e) => setFormData({...formData, char_type: e.target.value})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}>
+                          <option value="numeric">Angka (0-9)</option>
+                          <option value="lowercase">Huruf Kecil (a-z)</option>
+                          <option value="uppercase">Huruf Besar (A-Z)</option>
+                          <option value="alphanumeric">Campur Angka & Huruf</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '12px 16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Preview Format:</span>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', letterSpacing: '1px' }}>
+                        {formData.prefix}{formData.char_type === 'numeric' ? '123' : formData.char_type === 'uppercase' ? 'ABC' : formData.char_type === 'lowercase' ? 'abc' : 'A1B'}{'x'.repeat(Math.max(0, formData.length - 3))}
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            <div style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--pioniar-text-muted)' }}>
-                    <span>Tampilkan</span>
-                    <select 
-                      value={itemsPerPage} 
-                      onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                      style={{ padding: '0.2rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: 'var(--pioniar-bg)', color: 'var(--pioniar-text)', fontSize: '0.8rem', outline: 'none' }}
-                    >
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value={150}>150</option>
-                    </select>
-                    <span>data</span>
-                  </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--pioniar-text-muted)', borderLeft: '1px solid var(--pioniar-border)', paddingLeft: '0.75rem' }}>
-                    Menampilkan {filteredVouchers.length === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredVouchers.length)} dari {filteredVouchers.length}
-                  </span>
-                </div>
+                )}
                 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: currentPage === 1 ? 'transparent' : '#ffffff', color: currentPage === 1 ? '#cbd5e1' : 'var(--pioniar-text)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
-                  >
-                    Prev
-                  </button>
-                  <button 
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: currentPage === totalPages || totalPages === 0 ? 'transparent' : '#ffffff', color: currentPage === totalPages || totalPages === 0 ? '#cbd5e1' : 'var(--pioniar-text)', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
-                  >
-                    Next
+                {generateMode !== 'bulk' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Pilih Paket Layanan</label>
+                    <select 
+                      value={formData.plan}
+                      onChange={(e) => setFormData({...formData, plan: e.target.value})}
+                      style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}
+                    >
+                      {profiles.map(p => (
+                        <option key={p.id} value={p.name}>
+                          {p.name === 'default' ? 'Default Plan' : p.name} 
+                          {p.rate_limit ? ` (Limit ${p.rate_limit})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setShowModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}>Batal</button>
+                  <button type="submit" disabled={isGenerating} style={{ padding: '10px 24px', border: 'none', backgroundColor: '#3b82f6', color: '#ffffff', cursor: isGenerating ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isGenerating ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)' }} onMouseOver={e=>{if(!isGenerating) e.currentTarget.style.backgroundColor='#2563eb'}} onMouseOut={e=>{if(!isGenerating) e.currentTarget.style.backgroundColor='#3b82f6'}}>
+                    {isGenerating ? 'Memproses...' : 'Generate Voucher'}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
-          )}
-        </div>
-        </div>
-      </div>
-      </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
-      {/* Generate Voucher Modal */}
-      {showModal && createPortal(
-        <div style={{
-          position: 'fixed', inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
-        }}>
-          <div className="glass-panel animate-fade-in" style={{
-            width: '100%', maxWidth: '450px', borderRadius: 'var(--radius-xl)', 
-            padding: '2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative'
-          }}>
-            <button 
-              onClick={() => setShowModal(false)}
-              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'var(--pioniar-text-muted)', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
+      {/* Edit Modal (Premium Style) */}
+      {showEditModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '100%', maxWidth: '420px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Generate Voucher</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Buat akses internet baru untuk pelanggan.</p>
-            
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.02)', padding: '0.25rem', borderRadius: '0.5rem' }}>
-              <button 
-                type="button"
-                onClick={() => setGenerateMode('voucher')}
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', border: 'none', background: generateMode === 'voucher' ? 'var(--pioniar-primary)' : 'transparent', color: generateMode === 'voucher' ? '#fff' : 'var(--pioniar-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500, fontSize: '0.875rem' }}
-              >Voucher</button>
-              <button 
-                type="button"
-                onClick={() => setGenerateMode('member')}
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', border: 'none', background: generateMode === 'member' ? 'var(--pioniar-primary)' : 'transparent', color: generateMode === 'member' ? '#fff' : 'var(--pioniar-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500, fontSize: '0.875rem' }}
-              >Member</button>
-              <button 
-                type="button"
-                onClick={() => setGenerateMode('bulk')}
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', border: 'none', background: generateMode === 'bulk' ? 'var(--pioniar-primary)' : 'transparent', color: generateMode === 'bulk' ? '#fff' : 'var(--pioniar-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500, fontSize: '0.875rem' }}
-              >Bulk</button>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Edit2 size={18} />
+                </div>
+                Edit {editData.username}
+              </div>
+              <button onClick={() => setShowEditModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px', borderRadius: '6px', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#e2e8f0'} onMouseOut={e=>e.currentTarget.style.backgroundColor='transparent'}>
+                <X size={20} />
+              </button>
             </div>
             
-            <form onSubmit={handleGenerate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {generateMode === 'voucher' ? (
+            <div style={{ padding: '24px' }}>
+              <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>
-                    Kode Voucher
-                  </label>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Password Baru</label>
                   <input 
                     type="text" 
-                    className="input-base" 
-                    required={generateMode === 'voucher'}
-                    placeholder="Contoh: PION-1234"
-                    value={formData.username}
-                    onChange={(e) => setFormData({...formData, username: e.target.value})}
-                    style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
+                    placeholder="Kosongkan jika tidak diubah"
+                    value={editData.password}
+                    onChange={(e) => setEditData({...editData, password: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
                   />
-                  <p style={{ fontSize: '0.75rem', color: 'var(--pioniar-text-muted)', marginTop: '0.5rem' }}>*Kode ini berlaku sebagai username sekaligus password.</p>
                 </div>
-              ) : generateMode === 'member' ? (
-                <>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>
-                      Username Member
-                    </label>
-                    <input 
-                      type="text" 
-                      className="input-base" 
-                      required={generateMode === 'member'}
-                      placeholder="Contoh: eepridwan"
-                      value={formData.username}
-                      onChange={(e) => setFormData({...formData, username: e.target.value})}
-                      style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>
-                      Password
-                    </label>
-                    <input 
-                      type="text" 
-                      className="input-base" 
-                      required={generateMode === 'member'}
-                      placeholder="Password untuk koneksi"
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-                    />
-                  </div>
-                </>
-              ) : (
+                
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>
-                    Jumlah Voucher (Maks: 100)
-                  </label>
-                  <input 
-                    type="number" 
-                    min="1"
-                    max="100"
-                    className="input-base" 
-                    required={generateMode === 'bulk'}
-                    placeholder="Contoh: 10"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || ''})}
-                    style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-                  />
-                  <p style={{ fontSize: '0.75rem', color: 'var(--pioniar-text-muted)', marginTop: '0.5rem' }}>*Username dan password akan di-generate otomatis secara acak.</p>
-                </div>
-              )}
-              
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>
-                  Pilih Paket (Plan)
-                </label>
-                <div style={{ position: 'relative' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Ganti Paket</label>
                   <select 
-                    className="input-base"
-                    value={formData.plan}
-                    onChange={(e) => setFormData({...formData, plan: e.target.value})}
-                    style={{ width: '100%', appearance: 'none', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.02)' }}
+                    value={editData.plan}
+                    onChange={(e) => setEditData({...editData, plan: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}
                   >
                     {profiles.map(p => (
                       <option key={p.id} value={p.name}>
-                        {p.name === 'default' ? 'Default Plan' : p.name} 
-                        {p.rate_limit ? ` (Limit ${p.rate_limit})` : ''}
+                        {p.name === 'default' ? 'Default Plan' : p.name}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={16} color="#94a3b8" style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                 </div>
-              </div>
-              
-              <div style={{ padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '0.375rem', border: '1px dashed #cbd5e1' }}>
-                 <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>*Catatan: Masa aktif dan Limit Kecepatan mengikuti pengaturan profil/paket.</p>
-              </div>
 
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                <button type="button" className="btn" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--pioniar-text)' }}>
-                  Batal
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isGenerating} style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                  {isGenerating ? <HexLoader size={20} color="#fff" /> : 'Generate Sekarang'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Print Success Modal */}
-      {printData.length > 0 && createPortal(
-        <div style={{
-          position: 'fixed', inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(5px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
-        }}>
-          <div className="glass-panel animate-fade-in" style={{
-            width: '100%', maxWidth: '400px', borderRadius: 'var(--radius-xl)', 
-            padding: '2.5rem 2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative',
-            textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '1rem', borderRadius: '50%' }}>
-                <CheckCircle size={40} color="#10b981" />
-              </div>
-            </div>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--pioniar-text)' }}>{printData.length} Voucher Siap!</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-              Silakan cetak menggunakan kertas A4.
-            </p>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className="btn" onClick={() => setPrintData([])} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--pioniar-text)' }}>
-                Tutup
-              </button>
-              <button className="btn btn-primary" onClick={() => {
-                handleMarkPrinted(printData.map(v => v.username));
-                window.print();
-              }} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                <Printer size={18} /> Cetak (A4)
-              </button>
+                <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setShowEditModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
+                  <button type="submit" disabled={isEditing} style={{ padding: '10px 24px', border: 'none', backgroundColor: '#d97706', color: '#ffffff', cursor: isEditing ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isEditing ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(217, 119, 6, 0.2)' }}>
+                    {isEditing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>,
         document.body
       )}
 
-      {/* Edit Modal */}
-      {showEditModal && createPortal(
-        <div style={{
-          position: 'fixed', inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
-        }}>
-          <div className="glass-panel animate-fade-in" style={{
-            width: '100%', maxWidth: '400px', borderRadius: 'var(--radius-xl)', 
-            padding: '2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative'
-          }}>
-            <button 
-              onClick={() => setShowEditModal(false)}
-              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'var(--pioniar-text-muted)', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
-            
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Edit {editData.username}</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Ubah password atau paket untuk pengguna ini.</p>
-            
-            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>
-                  Password Baru (Kosongkan jika tidak diubah)
-                </label>
-                <input 
-                  type="text" 
-                  className="input-base" 
-                  placeholder="Password baru"
-                  value={editData.password}
-                  onChange={(e) => setEditData({...editData, password: e.target.value})}
-                  style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-                />
-              </div>
-              
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>
-                  Pilih Paket (Plan)
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <div 
-                    onClick={() => setIsPlanDropdownOpen(!isPlanDropdownOpen)}
-                    className="input-base"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-                  >
-                    <span style={{ color: editData.plan ? 'var(--pioniar-text)' : '#94a3b8' }}>
-                      {editData.plan === 'voucher_harian' ? 'Voucher Harian (Limit 2Mbps)' : 
-                       editData.plan === 'member_vip' ? 'Member VIP (Limit 5Mbps)' : editData.plan}
-                    </span>
-                    <ChevronDown size={16} color="#94a3b8" />
-                  </div>
-                  {isPlanDropdownOpen && (
-                    <div className="animate-slide-up" style={{
-                      position: 'absolute', top: 'calc(100% + 0.5rem)', left: 0, right: 0,
-                      backgroundColor: 'var(--pioniar-bg)', border: '1px solid var(--pioniar-border)',
-                      borderRadius: '0.5rem', overflow: 'hidden', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.4)'
-                    }}>
-                      {[
-                        { id: 'voucher_harian', label: 'Voucher Harian (Limit 2Mbps)' },
-                        { id: 'member_vip', label: 'Member VIP (Limit 5Mbps)' }
-                      ].map(plan => (
-                        <div 
-                          key={plan.id}
-                          onClick={() => {
-                            setEditData({...editData, plan: plan.id});
-                            setIsPlanDropdownOpen(false);
-                          }}
-                          style={{
-                            padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem',
-                            backgroundColor: editData.plan === plan.id ? 'rgba(56, 189, 248, 0.1)' : 'transparent',
-                            color: editData.plan === plan.id ? 'var(--pioniar-accent)' : 'var(--pioniar-text)'
-                          }}
-                          onMouseOver={(e) => { if(editData.plan !== plan.id) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)' }}
-                          onMouseOut={(e) => { if(editData.plan !== plan.id) e.currentTarget.style.backgroundColor = 'transparent' }}
-                        >
-                          {plan.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                <button type="button" className="btn" onClick={() => setShowEditModal(false)} style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--pioniar-text)' }}>
-                  Batal
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isEditing} style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                  {isEditing ? <Loader2 size={18} className="animate-spin" /> : 'Simpan Perubahan'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Delete Modal */}
+      {/* Delete Confirmation Modal (Premium Style) */}
       {showDeleteModal && deleteData && createPortal(
-        <div style={{
-          position: 'fixed', inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
-        }}>
-          <div className="glass-panel animate-fade-in" style={{
-            width: '100%', maxWidth: '400px', borderRadius: 'var(--radius-xl)', 
-            padding: '2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative',
-            textAlign: 'center'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '50%' }}>
-                <Trash2 size={40} color="#ef4444" />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '100%', maxWidth: '360px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            
+            <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Trash2 size={24} />
               </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: '0 0 8px 0' }}>Hapus Pengguna</h3>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
+                Apakah Anda yakin ingin menghapus <strong>{deleteData.username}</strong>? Tindakan ini tidak dapat dibatalkan.
+              </p>
             </div>
             
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Hapus {deleteData.username}?</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-              Voucher ini akan dihapus permanen dari MikroTik dan database. Tindakan ini tidak dapat dibatalkan.
-            </p>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="button" className="btn" onClick={() => { setShowDeleteModal(false); setDeleteData(null); }} style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--pioniar-text)' }}>
-                Batal
+            <div style={{ padding: '24px', display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
+              <button type="button" onClick={() => { setShowDeleteModal(false); setDeleteData(null); }} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
+              <button type="button" onClick={confirmDelete} disabled={isDeleting} style={{ flex: 1, padding: '10px', border: 'none', backgroundColor: '#ef4444', color: '#ffffff', cursor: isDeleting ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isDeleting ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(239, 68, 68, 0.2)' }}>
+                {isDeleting ? 'Memproses...' : 'Ya, Hapus'}
               </button>
-              <button type="button" className="btn" onClick={confirmDelete} disabled={isDeleting} style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff', border: 'none', display: 'flex', justifyContent: 'center' }}>
-                {isDeleting ? <Loader2 size={18} className="animate-spin" /> : 'Ya, Hapus'}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Bulk Delete Modal (Premium Style) */}
+      {showBulkDeleteModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '100%', maxWidth: '360px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            
+            <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Trash2 size={24} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: '0 0 8px 0' }}>Hapus Masal</h3>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
+                Hapus <strong>{selectedVouchers.length}</strong> voucher terpilih secara permanen?
+              </p>
+            </div>
+            
+            <div style={{ padding: '24px', display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
+              <button type="button" onClick={() => setShowBulkDeleteModal(false)} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
+              <button type="button" onClick={handleBulkDelete} disabled={isDeleting} style={{ flex: 1, padding: '10px', border: 'none', backgroundColor: '#ef4444', color: '#ffffff', cursor: isDeleting ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isDeleting ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(239, 68, 68, 0.2)' }}>
+                {isDeleting ? 'Memproses...' : 'Ya, Hapus'}
               </button>
             </div>
           </div>
@@ -832,54 +701,73 @@ export default function WifiManager() {
       )}
 
       {/* Printable Area (Hidden normally, shown on print) */}
-      <div id="printable-voucher-area">
-        <style>
-          {`
-            @media screen {
-              #printable-voucher-area { display: none; }
-            }
-            @media print {
-              body * { visibility: hidden !important; }
-              #printable-voucher-area, #printable-voucher-area * { visibility: visible !important; }
-              #printable-voucher-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                display: grid;
-                grid-template-columns: repeat(5, 1fr);
-                grid-auto-rows: minmax(40mm, auto);
-                gap: 5mm;
-                padding: 10mm;
-                background: white;
+      {createPortal(
+        <div id="printable-voucher-area">
+          <style>
+            {`
+              @media screen {
+                #printable-voucher-area { display: none !important; }
               }
-              .voucher-card {
-                border: 1.5px dashed #333;
-                padding: 4mm;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                page-break-inside: avoid;
-                font-family: 'Courier New', monospace;
-                background: white;
-                color: black;
-                border-radius: 4mm;
+              @media print {
+                #root { display: none !important; }
+                body { margin: 0; padding: 0; background: white; }
+                #printable-voucher-area {
+                  display: grid !important;
+                  width: 100%;
+                  grid-template-columns: repeat(5, 1fr);
+                  gap: 1.5mm;
+                  padding: 3mm 5mm;
+                  background: white;
+                  box-sizing: border-box;
+                }
+                .voucher-card {
+                  border: 1.5px solid black;
+                  border-radius: 1.5mm;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  page-break-inside: avoid;
+                  font-family: 'Arial', sans-serif;
+                  background: white;
+                  color: black;
+                  height: 12.5mm;
+                  box-sizing: border-box;
+                }
+                .voucher-code {
+                  font-size: 11pt;
+                  font-weight: 900;
+                  letter-spacing: 0.5px;
+                  margin-bottom: 0.2mm;
+                }
+                .voucher-footer {
+                  display: flex;
+                  justify-content: space-between;
+                  width: 100%;
+                  padding: 0 2.5mm;
+                  box-sizing: border-box;
+                  font-size: 5pt;
+                  font-weight: 800;
+                  text-transform: uppercase;
+                  border-top: 1px dashed #666;
+                  padding-top: 0.8mm;
+                }
+                @page { size: A4 portrait; margin: 0; }
               }
-              @page { size: A4 portrait; margin: 0; }
-            }
-          `}
-        </style>
-        {printData.map((v, i) => (
-          <div key={i} className="voucher-card">
-            <div style={{ fontWeight: '900', fontSize: '13pt', marginBottom: '2mm', letterSpacing: '1px' }}>PIONIAR</div>
-            <div style={{ fontSize: '11pt', marginBottom: '1mm' }}>{v.username}</div>
-            <div style={{ fontSize: '8pt', color: '#666', borderTop: '1px solid #eee', paddingTop: '2mm', marginTop: '1mm', width: '100%', textAlign: 'center' }}>
-              {v.plan === 'voucher_harian' ? 'Limit 2Mbps' : v.plan === 'member_vip' ? 'Limit 5Mbps' : v.plan}
+            `}
+          </style>
+          {printData.map((v, i) => (
+            <div key={i} className="voucher-card">
+              <div className="voucher-code">{v.username}</div>
+              <div className="voucher-footer">
+                <span>PIONIAR</span>
+                <span>{v.plan.replace('voucher_', '').replace('member_', '')}</span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

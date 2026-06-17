@@ -1,29 +1,54 @@
-import React, { useEffect, useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Wifi, Hexagon, Coffee, LayoutDashboard, Lock, LogOut, X, ChevronDown, Menu } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Wifi, Hexagon, Lock, LogOut, X, ChevronDown, ChevronRight, Search, Box, Minus, LayoutGrid } from 'lucide-react';
+import WinBoxWindow from './components/WinBoxWindow';
+
+// Import Page Components
+import DashboardOverview from './pages/DashboardOverview';
+import WifiManager from './pages/WifiManager';
+import WifiProfileManager from './pages/WifiProfileManager';
+import WifiActiveSessions from './pages/WifiActiveSessions';
+import WifiReporting from './pages/WifiReporting';
+
+const Placeholder = ({ title }) => (
+  <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', backgroundColor: '#fff' }}>
+    <h2>{title} (Under Construction)</h2>
+  </div>
+);
+
+const windowRegistry = {
+  '/admin': { component: DashboardOverview, icon: <Box size={14}/>, title: 'Dashboard', defaultSize: { w: 800, h: 500 }, initialMaximized: true },
+  '/admin/wifi': { component: WifiManager, icon: <Wifi size={14}/>, title: 'Manajemen Voucher', defaultSize: { w: 900, h: 600 }, initialMaximized: true },
+  '/admin/wifi/packages': { component: WifiProfileManager, icon: <Wifi size={14}/>, title: 'Setup Paket', defaultSize: { w: 800, h: 500 }, initialMaximized: true },
+  '/admin/wifi/active': { component: WifiActiveSessions, icon: <Wifi size={14}/>, title: 'Sesi Aktif', defaultSize: { w: 800, h: 500 }, initialMaximized: true },
+  '/admin/wifi/reporting': { component: WifiReporting, icon: <Wifi size={14}/>, title: 'Laporan Pendapatan', defaultSize: { w: 800, h: 500 }, initialMaximized: true },
+  '/admin/livestock': { component: () => <Placeholder title="Ternak" />, icon: <Lock size={14}/>, title: 'Ternak', defaultSize: { w: 600, h: 400 }, initialMaximized: true },
+  '/admin/snack': { component: () => <Placeholder title="Snack" />, icon: <Lock size={14}/>, title: 'Snack', defaultSize: { w: 600, h: 400 }, initialMaximized: true }
+};
 
 export default function AdminLayout() {
-  const location = useLocation();
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [openDropdowns, setOpenDropdowns] = useState({'Wifi': false});
+  const [openDropdowns, setOpenDropdowns] = useState({'Wifi': true});
+  
+  // MDI Window Manager State
+  const [openWindows, setOpenWindows] = useState([]);
+  const [highestZIndex, setHighestZIndex] = useState(10);
+  const desktopRef = useRef(null);
 
   const toggleDropdown = (label) => {
     setOpenDropdowns(prev => ({...prev, [label]: !prev[label]}));
   };
 
   useEffect(() => {
-    // Cek apakah admin sudah pernah login sebelumnya di browser ini
     const authStatus = localStorage.getItem('pioniar_admin_auth');
     if (authStatus === 'eepridwan' || authStatus === 'erpauji.medic@gmail.com') {
       setIsAuthenticated(true);
     }
-    
-    // Apply admin dark theme globally
     document.body.classList.add('admin-mode');
     return () => {
       document.body.classList.remove('admin-mode');
@@ -32,7 +57,6 @@ export default function AdminLayout() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Super Admin Credentials
     if ((username === 'eepridwan' || username === 'erpauji.medic@gmail.com') && password === 'Liveforever27*') {
       setIsAuthenticated(true);
       localStorage.setItem('pioniar_admin_auth', username);
@@ -51,9 +75,9 @@ export default function AdminLayout() {
   };
 
   const navItems = [
-    { path: '/admin', label: 'Overview', icon: <LayoutDashboard size={16} /> },
+    { path: '/admin', label: 'Dashboard', icon: <Box size={14} /> },
     { 
-      label: 'Wifi', icon: <Wifi size={16} />,
+      label: 'Wifi', icon: <Wifi size={14} />,
       subItems: [
         { path: '/admin/wifi', label: 'Manajemen Voucher' },
         { path: '/admin/wifi/packages', label: 'Setup Paket' },
@@ -61,117 +85,146 @@ export default function AdminLayout() {
         { path: '/admin/wifi/reporting', label: 'Laporan Pendapatan' }
       ]
     },
-    { path: '/admin/livestock', label: 'Ternak', icon: <Lock size={16} />, locked: true },
-    { path: '/admin/snack', label: 'Snack', icon: <Lock size={16} />, locked: true },
+    { path: '/admin/livestock', label: 'Ternak', icon: <Lock size={14} />, locked: true },
+    { path: '/admin/snack', label: 'Snack', icon: <Lock size={14} />, locked: true },
   ];
 
-  // ==========================================
-  // RENDER ADMIN LAYOUT (SELALU TAMPIL)
-  // ==========================================
+  // Window Management Functions
+  const openWindow = (path) => {
+    if (windowRegistry[path]?.locked) return; // Ignore locked paths
+
+    setOpenWindows(prev => {
+      const existing = prev.find(w => w.id === path);
+      if (existing) {
+        // Bring to front and restore if minimized
+        return prev.map(w => w.id === path ? { ...w, isMinimized: false, zIndex: highestZIndex + 1 } : w);
+      } else {
+        // Open new window
+        const offset = (prev.length % 10) * 25; // Cascade windows
+        return [...prev, { 
+          id: path, 
+          isMinimized: false, 
+          zIndex: highestZIndex + 1,
+          x: 20 + offset,
+          y: 20 + offset
+        }];
+      }
+    });
+    setHighestZIndex(z => z + 1);
+  };
+
+  const closeWindow = (path, e) => {
+    e?.stopPropagation();
+    setOpenWindows(prev => prev.filter(w => w.id !== path));
+  };
+
+  const focusWindow = (path) => {
+    setOpenWindows(prev => prev.map(w => w.id === path ? { ...w, isMinimized: false, zIndex: highestZIndex + 1 } : w));
+    setHighestZIndex(z => z + 1);
+  };
+
+  const toggleMinimize = (path, e) => {
+    e?.stopPropagation();
+    setOpenWindows(prev => prev.map(w => w.id === path ? { ...w, isMinimized: !w.isMinimized } : w));
+  };
+
+  // Auto-Tile / Split View Logic
+  const autoTileWindows = () => {
+    if (!desktopRef.current) return;
+    const desktop = desktopRef.current.getBoundingClientRect();
+    const activeWins = openWindows.filter(w => !w.isMinimized);
+    const count = activeWins.length;
+    if (count === 0) return;
+
+    const margin = 8; // margin between windows
+    const layoutId = Date.now();
+
+    setOpenWindows(prev => prev.map(w => {
+      if (w.isMinimized) return w;
+      
+      const index = activeWins.findIndex(aw => aw.id === w.id);
+      let forcedX, forcedY, forcedW, forcedH;
+
+      if (count === 1) {
+        forcedX = margin;
+        forcedY = margin;
+        forcedW = desktop.width - margin * 2;
+        forcedH = desktop.height - margin * 2;
+      } else if (count === 2) {
+        forcedW = (desktop.width - margin * 3) / 2;
+        forcedH = desktop.height - margin * 2;
+        forcedX = margin + index * (forcedW + margin);
+        forcedY = margin;
+      } else if (count === 3) {
+        if (index === 0) {
+          forcedW = (desktop.width - margin * 3) / 2;
+          forcedH = desktop.height - margin * 2;
+          forcedX = margin;
+          forcedY = margin;
+        } else {
+          forcedW = (desktop.width - margin * 3) / 2;
+          forcedH = (desktop.height - margin * 3) / 2;
+          forcedX = margin * 2 + forcedW;
+          forcedY = margin + (index - 1) * (forcedH + margin);
+        }
+      } else {
+        // 4+ Windows (2x2 grid max, others hide or cascade)
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+        forcedW = (desktop.width - margin * 3) / 2;
+        forcedH = (desktop.height - margin * 3) / 2;
+        forcedX = margin + col * (forcedW + margin);
+        forcedY = margin + row * (forcedH + margin);
+      }
+
+      return { ...w, layoutId, forcedX, forcedY, forcedW, forcedH };
+    }));
+  };
+
+  // Open default dashboard on login
+  useEffect(() => {
+    if (isAuthenticated && openWindows.length === 0) {
+      openWindow('/admin');
+    }
+  }, [isAuthenticated, openWindows.length]);
+
   if (!isAuthenticated) {
     return (
-      <div className="bg-hex-pattern" style={{ 
-        width: '100%', 
-        height: '100vh', 
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-        overflow: 'hidden',
-        position: 'relative',
-        backgroundColor: '#f8fafc'
-      }}>
-        {/* Watermark Background Logo */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', maxWidth: '800px', height: '100%', zIndex: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-           <img src="/logo-icon.png" alt="" style={{ height: '400px', width: 'auto', opacity: 0.03, transform: 'rotate(-15deg)', filter: 'grayscale(100%)' }} />
-        </div>
-
-        <div className="glass-panel animate-slide-up" style={{ 
-          width: '100%', 
-          maxWidth: '380px', 
-          padding: '2.5rem', 
-          borderRadius: '0.75rem', 
-          position: 'relative', 
-          zIndex: 1, 
-          backgroundColor: 'rgba(255, 255, 255, 0.98)',
-          boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)'
-        }}>
-          
-          {/* Centered Wide Logo (Icon + Text) */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', marginBottom: '2rem' }}>
-            <img src="/logo-icon.png" alt="Pioniar" style={{ height: '36px', width: 'auto', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} onError={(e) => e.target.style.display = 'none'} />
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
-              PIONIAR <span style={{ background: 'linear-gradient(135deg, #ef4444, #f87171)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ADMIN</span>
-            </span>
-          </div>
-
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <input 
-                type="text" 
-                placeholder="Admin Email / Username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoFocus
-                style={{ 
-                  width: '100%', padding: '1rem 1.25rem', 
-                  backgroundColor: '#f8fafc', color: '#0f172a', 
-                  border: error ? '1px solid #ef4444' : '1px solid #e2e8f0', 
-                  borderRadius: '0.5rem', fontSize: '0.9rem', outline: 'none',
-                  transition: 'all 0.2s'
-                }}
-                onFocus={(e) => { e.target.style.border = '1px solid #ef4444'; e.target.style.backgroundColor = '#ffffff'; }}
-                onBlur={(e) => { e.target.style.border = error ? '1px solid #ef4444' : '1px solid #e2e8f0'; e.target.style.backgroundColor = '#f8fafc'; }}
-              />
-              
-              <input 
-                type="password" 
-                placeholder="Secret Password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ 
-                  width: '100%', padding: '1rem 1.25rem', 
-                  backgroundColor: '#f8fafc', color: '#0f172a', 
-                  border: error ? '1px solid #ef4444' : '1px solid #e2e8f0', 
-                  borderRadius: '0.5rem', fontSize: '0.9rem', outline: 'none',
-                  letterSpacing: password ? '4px' : 'normal',
-                  transition: 'all 0.2s'
-                }}
-                onFocus={(e) => { e.target.style.border = '1px solid #ef4444'; e.target.style.backgroundColor = '#ffffff'; }}
-                onBlur={(e) => { e.target.style.border = error ? '1px solid #ef4444' : '1px solid #e2e8f0'; e.target.style.backgroundColor = '#f8fafc'; }}
-              />
-              
-              {error && (
-                <div className="animate-slide-up" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.2rem', fontWeight: 500, textAlign: 'center' }}>
-                  {error}
-                </div>
-              )}
+      <div style={{ width: '100%', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: '#eef2f6', fontFamily: 'Inter, sans-serif' }}>
+        {/* Decorative Background */}
+        <div style={{ position: 'absolute', top: '10%', left: '15%', width: '30vw', height: '30vw', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
+        <div style={{ position: 'absolute', bottom: '10%', right: '15%', width: '40vw', height: '40vw', background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
+        
+        <div style={{ width: '100%', maxWidth: '400px', padding: '40px', borderRadius: '24px', backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(226, 232, 240, 0.8)', boxShadow: '0 20px 40px rgba(0,0,0,0.06)', zIndex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ width: '56px', height: '56px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(37, 99, 235, 0.25)' }}>
+               <Hexagon size={32} fill="#fff" color="#fff" />
             </div>
-            
-            <button type="submit" style={{ 
-              marginTop: '0.5rem', width: '100%', padding: '1rem', borderRadius: '0.5rem', 
-              fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-              backgroundColor: '#ef4444', color: 'white', border: 'none',
-              transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
-            >
-              Secure Login
+            <h1 style={{ fontSize: '24px', fontWeight: '800', marginTop: '20px', marginBottom: '6px', color: '#0f172a', letterSpacing: '-0.5px' }}>Pioniar Admin</h1>
+            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>Sistem Manajemen Jaringan Pintar</p>
+          </div>
+          
+          {error && (
+            <div style={{ padding: '12px 16px', backgroundColor: '#fff1f2', color: '#e11d48', borderRadius: '12px', marginBottom: '24px', fontSize: '13px', fontWeight: '500', border: '1px solid #ffe4e6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '4px', height: '16px', backgroundColor: '#e11d48', borderRadius: '4px' }}></div>
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Alamat Email / Username</label>
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin@pioniar.com" style={{ width: '100%', padding: '12px 16px', border: '1px solid #cbd5e1', borderRadius: '12px', fontSize: '14px', color: '#0f172a', backgroundColor: '#f8fafc', transition: 'all 0.2s ease', outline: 'none' }} required />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Kata Sandi</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={{ width: '100%', padding: '12px 16px', border: '1px solid #cbd5e1', borderRadius: '12px', fontSize: '14px', color: '#0f172a', backgroundColor: '#f8fafc', transition: 'all 0.2s ease', outline: 'none' }} required />
+            </div>
+            <button type="submit" style={{ marginTop: '12px', width: '100%', padding: '14px', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#ffffff', border: 'none', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)', transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+              Masuk ke Workspace
             </button>
-            <button 
-              type="button"
-              onClick={() => navigate('/')}
-              style={{ 
-                width: '100%', padding: '0.75rem', borderRadius: '0.5rem', 
-                fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
-                backgroundColor: 'transparent', color: '#64748b', border: 'none',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
-              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b'; }}
-            >
-              Kembali ke Portal Publik
+            <button type="button" onClick={() => navigate('/')} style={{ width: '100%', padding: '12px', borderRadius: '12px', cursor: 'pointer', backgroundColor: 'transparent', color: '#64748b', fontWeight: '600', fontSize: '14px', border: 'none', transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.color = '#0f172a'} onMouseOut={e => e.currentTarget.style.color = '#64748b'}>
+              &larr; Kembali ke Halaman Publik
             </button>
           </form>
         </div>
@@ -180,341 +233,195 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="admin-layout-container" style={{ display: 'flex', height: '100dvh', overflow: 'hidden', backgroundColor: 'var(--pioniar-bg)', position: 'relative' }}>
-
-      {/* Mobile Overlay */}
-      <div 
-        className={`admin-sidebar-overlay ${isSidebarOpen ? 'open' : ''}`} 
-        onClick={() => setIsSidebarOpen(false)}
-      ></div>
-
-      {/* 1. SIDEBAR EAM STYLE CLONE */}
-      <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`} style={{ 
-        width: isSidebarOpen ? '200px' : '64px', 
-        background: 'linear-gradient(to bottom, #ffffff, rgba(241, 245, 249, 0.8))', 
-        borderRight: '1px solid var(--pioniar-border)', 
+    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', backgroundColor: '#eef2f6', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#0f172a' }}>
+      
+      {/* SIDEBAR - Premium Light Theme */}
+      <aside style={{ 
+        width: '260px', 
+        background: 'rgba(255, 255, 255, 0.95)', 
+        backdropFilter: 'blur(10px)',
+        borderRight: '1px solid rgba(226, 232, 240, 0.8)', 
         display: 'flex', 
         flexDirection: 'column', 
-        position: 'relative',
-        transition: 'width 0.3s ease-in-out'
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        zIndex: 9999,
+        boxShadow: '1px 0 15px rgba(0,0,0,0.02)'
       }}>
-        <div 
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          style={{ 
-          height: '56px', 
-          minHeight: '56px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          padding: '0 1rem', 
-          borderBottom: '1px solid rgba(241, 245, 249, 0.5)', 
-          gap: '0.5rem',
-          cursor: 'pointer'
-        }}>
-          <div style={{ position: 'relative', width: '32px', height: '32px', minWidth: '32px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Hexagon acting as Logo */}
-            <Hexagon size={24} fill="var(--pioniar-primary)" color="white" />
-          </div>
-          {isSidebarOpen && (
-            <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--pioniar-text)', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
-              PIONIAR
-            </span>
-          )}
+        {/* Logo Area */}
+        <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+           <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)' }}>
+             <Hexagon size={20} fill="#fff" color="#fff" />
+           </div>
+           <span style={{ fontWeight: '800', fontSize: '20px', letterSpacing: '-0.5px', color: '#0f172a' }}>Pioniar.</span>
         </div>
-        
-        <nav style={{ flex: 1, padding: '1rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: isSidebarOpen ? 'auto' : 'visible', overflowX: isSidebarOpen ? 'hidden' : 'visible' }}>
-          <div style={{ padding: '0.5rem 0.75rem 0.25rem 0.75rem', display: 'flex', alignItems: 'center', height: '28px' }}>
-            {isSidebarOpen ? (
-              <span style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', width: '100%' }}>
-                CORE SYSTEM
-              </span>
-            ) : (
-              <div style={{ width: '24px', height: '2px', backgroundColor: 'rgba(226, 232, 240, 0.6)', borderRadius: '9999px', margin: '0 auto' }}></div>
-            )}
-          </div>
+
+        <nav style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '8px', paddingLeft: '8px' }}>Menu Navigasi</div>
           {navItems.map((item) => {
             if (item.subItems) {
-              const isActive = item.subItems.some(sub => location.pathname === sub.path || location.pathname.startsWith(sub.path + '/'));
-              const isOpen = openDropdowns[item.label];
-              
+              const isExpanded = openDropdowns[item.label];
               return (
-                <div 
-                  key={item.label} 
-                  style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', position: 'relative' }}
-                >
+                <div key={item.label}>
                   <div 
                     onClick={() => toggleDropdown(item.label)}
                     style={{
-                      display: 'flex', alignItems: 'center', justifyContent: isSidebarOpen ? 'space-between' : 'center', 
-                      padding: '0.6rem 0.875rem', borderRadius: '0.5rem', cursor: 'pointer',
-                      color: isActive ? 'var(--pioniar-primary)' : '#64748b',
-                      backgroundColor: isActive ? 'rgba(40, 96, 134, 0.05)' : 'transparent',
-                      fontWeight: isActive ? 600 : 500,
-                      fontSize: '12px',
-                      transition: 'all 0.2s'
+                      display: 'flex', alignItems: 'center', padding: '12px 16px', cursor: 'pointer',
+                      borderRadius: '10px', color: '#475569', transition: 'all 0.25s ease',
+                      fontWeight: '600'
                     }}
-                    onMouseOver={(e) => {
-                      if (!isActive) { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = 'var(--pioniar-primary)'; }
-                    }}
-                    onMouseOut={(e) => {
-                      if (!isActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b'; }
-                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#475569'; }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        {item.icon}
-                        {!isSidebarOpen && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
-                            <div style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: isActive ? 'var(--pioniar-primary)' : '#94a3b8' }}></div>
-                            <div style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: isActive ? 'var(--pioniar-primary)' : '#94a3b8' }}></div>
-                            <div style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: isActive ? 'var(--pioniar-primary)' : '#94a3b8' }}></div>
-                          </div>
-                        )}
-                      </div>
-                      {isSidebarOpen && <span>{item.label}</span>}
+                    <div style={{ marginRight: '14px', display: 'flex', alignItems: 'center' }}>{item.icon}</div>
+                    <span style={{ flex: 1, userSelect: 'none' }}>{item.label}</span>
+                    <div style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                      <ChevronDown size={16} />
                     </div>
-                    {isSidebarOpen && (
-                      <ChevronDown size={14} style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                    )}
                   </div>
-                  
-                  {isSidebarOpen && isOpen && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', paddingLeft: '2.5rem', marginTop: '0.1rem' }}>
+                  <div style={{ 
+                    overflow: 'hidden', 
+                    transition: 'all 0.3s ease-in-out', 
+                    maxHeight: isExpanded ? '300px' : '0px',
+                    opacity: isExpanded ? 1 : 0
+                  }}>
+                    <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {item.subItems.map(sub => {
-                        const isSubActive = location.pathname === sub.path;
+                        const isSubActive = openWindows.some(w => w.id === sub.path && w.zIndex === highestZIndex);
                         return (
-                          <Link 
+                          <div 
                             key={sub.path} 
-                            to={sub.path}
+                            onClick={() => openWindow(sub.path)}
                             style={{
-                              padding: '0.4rem 0.75rem', borderRadius: '0.35rem', textDecoration: 'none',
-                              color: isSubActive ? 'var(--pioniar-primary)' : '#94a3b8',
-                              backgroundColor: isSubActive ? 'rgba(40, 96, 134, 0.08)' : 'transparent',
-                              fontWeight: isSubActive ? 600 : 500, fontSize: '11.5px',
-                              transition: 'all 0.2s'
+                              display: 'block', padding: '10px 16px 10px 46px', cursor: 'pointer',
+                              borderRadius: '10px', fontSize: '13px', userSelect: 'none',
+                              color: isSubActive ? '#0f172a' : '#64748b',
+                              backgroundColor: isSubActive ? '#e2e8f0' : 'transparent', // Premium Grey Active Tab
+                              fontWeight: isSubActive ? '700' : '500',
+                              transition: 'all 0.2s ease',
+                              position: 'relative'
                             }}
-                            onMouseOver={(e) => {
-                              if (!isSubActive) { e.currentTarget.style.color = 'var(--pioniar-primary)'; }
-                            }}
-                            onMouseOut={(e) => {
-                              if (!isSubActive) { e.currentTarget.style.color = '#94a3b8'; }
-                            }}
+                            onMouseOver={(e) => { if (!isSubActive) { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#334155'; } }}
+                            onMouseOut={(e) => { if (!isSubActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b'; } }}
                           >
+                            {isSubActive && <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#3b82f6' }}></div>}
                             {sub.label}
-                          </Link>
-                        )
+                          </div>
+                        );
                       })}
                     </div>
-                  )}
-
-                  {!isSidebarOpen && isOpen && (
-                    <div className="desktop-only" style={{
-                      position: 'absolute',
-                      left: '100%',
-                      top: 0,
-                      marginLeft: '0.5rem',
-                      backgroundColor: '#ffffff',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                      borderRadius: '0.5rem',
-                      padding: '0.5rem',
-                      zIndex: 50,
-                      minWidth: '180px',
-                      border: '1px solid var(--pioniar-border)'
-                    }}>
-                      <div style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                        {item.label}
-                      </div>
-                      {item.subItems.map(sub => {
-                        const isSubActive = location.pathname === sub.path;
-                        return (
-                          <Link 
-                            key={sub.path} 
-                            to={sub.path}
-                            style={{
-                              display: 'block', padding: '0.5rem 0.75rem', borderRadius: '0.35rem', textDecoration: 'none',
-                              color: isSubActive ? 'var(--pioniar-primary)' : '#64748b',
-                              backgroundColor: isSubActive ? 'rgba(40, 96, 134, 0.08)' : 'transparent',
-                              fontWeight: isSubActive ? 600 : 500, fontSize: '0.85rem',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseOver={(e) => {
-                              if (!isSubActive) { e.currentTarget.style.color = 'var(--pioniar-primary)'; e.currentTarget.style.backgroundColor = '#f8fafc'; }
-                            }}
-                            onMouseOut={(e) => {
-                              if (!isSubActive) { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = 'transparent'; }
-                            }}
-                          >
-                            {sub.label}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            
-            const isActive = location.pathname === item.path;
-            
-            if (item.locked) {
-              return (
-                <div 
-                  key={item.path}
-                  title={`${item.label} (Segera Hadir)`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.875rem',
-                    borderRadius: '0.5rem', textDecoration: 'none',
-                    color: '#94a3b8',
-                    backgroundColor: 'transparent',
-                    border: '1px solid transparent',
-                    fontWeight: 500,
-                    fontSize: '12px',
-                    justifyContent: isSidebarOpen ? 'flex-start' : 'center',
-                    cursor: 'not-allowed',
-                    opacity: 0.6
-                  }}
-                >
-                  {item.icon}
-                  {isSidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+                  </div>
                 </div>
               );
             }
 
+            const isActive = openWindows.some(w => w.id === item.path && w.zIndex === highestZIndex);
             return (
-              <Link 
+              <div 
                 key={item.path} 
-                to={item.path}
-                title={item.label}
+                onClick={() => openWindow(item.path)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.875rem',
-                  borderRadius: '0.5rem', textDecoration: 'none',
-                  color: isActive ? '#ffffff' : '#64748b',
-                  backgroundColor: isActive ? 'var(--pioniar-primary)' : 'transparent',
-                  border: isActive ? '1px solid var(--pioniar-primary)' : '1px solid transparent',
-                  boxShadow: isActive ? '0 4px 6px -1px rgba(40, 96, 134, 0.2), 0 2px 4px -1px rgba(40, 96, 134, 0.1)' : 'none',
-                  transition: 'all 0.2s',
-                  fontWeight: isActive ? 600 : 500,
-                  fontSize: '12px',
-                  justifyContent: isSidebarOpen ? 'flex-start' : 'center'
+                  display: 'flex', alignItems: 'center', padding: '12px 16px', cursor: item.locked ? 'not-allowed' : 'pointer',
+                  borderRadius: '10px', transition: 'all 0.25s ease', fontWeight: isActive ? '700' : '600', userSelect: 'none',
+                  color: item.locked ? '#cbd5e1' : (isActive ? '#0f172a' : '#475569'),
+                  backgroundColor: isActive ? '#e2e8f0' : 'transparent', // Premium Grey Active Tab
+                  position: 'relative'
                 }}
-                onMouseOver={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = '#ffffff';
-                    e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.5)';
-                    e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
-                    e.currentTarget.style.color = 'var(--pioniar-primary)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.borderColor = 'transparent';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.color = '#64748b';
-                  }
-                }}
+                onMouseOver={(e) => { if (!isActive && !item.locked) { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; } }}
+                onMouseOut={(e) => { if (!isActive && !item.locked) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#475569'; } }}
               >
-                {item.icon}
-                {isSidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
-              </Link>
-            )
+                {isActive && <div style={{ position: 'absolute', left: 0, top: '15%', bottom: '15%', width: '4px', borderTopRightRadius: '4px', borderBottomRightRadius: '4px', backgroundColor: '#3b82f6' }}></div>}
+                <div style={{ marginRight: '14px', display: 'flex', alignItems: 'center', color: isActive ? '#3b82f6' : 'inherit' }}>{item.icon}</div>
+                <span>{item.label}</span>
+              </div>
+            );
           })}
         </nav>
-
-        <div style={{ marginTop: 'auto', padding: '1rem 0.5rem' }}>
-            <div style={{ padding: '0 0.75rem 0.25rem 0.75rem', display: 'flex', alignItems: 'center', height: '28px' }}>
-              {isSidebarOpen ? (
-                <span style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', width: '100%' }}>
-                  SETTINGS
-                </span>
-              ) : (
-                <div style={{ width: '20px', height: '2px', backgroundColor: 'rgba(226, 232, 240, 0.6)', borderRadius: '9999px', margin: '0 auto' }}></div>
-              )}
+        
+        {/* User Profile Area */}
+        <div style={{ marginTop: 'auto', padding: '24px', borderTop: '1px solid rgba(226, 232, 240, 0.6)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#475569' }}>
+              AD
             </div>
-            <button 
-              onClick={handleLogout}
-              title="Kembali ke Beranda"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.875rem', width: '100%', backgroundColor: 'transparent', border: '1px solid transparent', color: '#64748b', cursor: 'pointer', borderRadius: '0.5rem', transition: 'all 0.2s', fontWeight: 600, fontSize: '12px', justifyContent: isSidebarOpen ? 'flex-start' : 'center' }}
-              onMouseOver={(e) => { 
-                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'; 
-                e.currentTarget.style.color = '#ef4444'; 
-              }}
-              onMouseOut={(e) => { 
-                e.currentTarget.style.backgroundColor = 'transparent'; 
-                e.currentTarget.style.color = '#64748b'; 
-              }}
-            >
-              <LogOut size={16} />
-              {isSidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>Kembali ke Beranda</span>}
-            </button>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>Administrator</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Online</div>
+            </div>
+          </div>
         </div>
       </aside>
 
-      {/* 2. MAIN CONTENT AREA */}
-      <main className="admin-main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {/* MAIN CONTENT AREA */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
         
-        {/* Mobile Header (Only visible on mobile) */}
-        <div className="mobile-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Hexagon size={24} fill="var(--pioniar-primary)" color="white" />
-            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', letterSpacing: '0.05em' }}>PIONIAR</span>
-          </div>
-          <button onClick={() => setIsSidebarOpen(true)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-            <Menu size={24} color="#64748b" />
-          </button>
-        </div>
-
-        {/* Top Header Section (Desktop only or shared) */}
+        {/* Sleek Top Bar */}
         <header style={{ 
-          height: '56px', minHeight: '56px', backgroundColor: 'var(--pioniar-bg-secondary)', 
-          borderBottom: '1px solid var(--pioniar-border)', display: 'flex', 
-          alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem',
-          position: 'sticky', top: 0, zIndex: 100
+          height: '72px', background: 'rgba(255, 255, 255, 0.8)', 
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(226, 232, 240, 0.6)', 
+          display: 'flex', alignItems: 'center', padding: '0 32px', gap: '20px', zIndex: 9998
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--pioniar-text)', textTransform: 'capitalize' }}>
-              {location.pathname === '/admin' ? 'Dashboard' : location.pathname.split('/').pop()}
-            </span>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ margin: 0, fontWeight: '800', fontSize: '20px', color: '#0f172a', letterSpacing: '-0.3px' }}>
+              {openWindows.length > 0 ? `Workspace (${openWindows.length} Aktif)` : 'Dashboard Utama'}
+            </h1>
+            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#64748b' }}>Kelola jaringan Pioniar Anda dengan mudah.</p>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-             {/* Profile Dropdown Simulation EAM */}
-             <button style={{ 
-                display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.25rem 0.75rem 0.25rem 0.35rem', 
-                borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff',
-                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', cursor: 'pointer', transition: 'all 0.2s'
-             }}
-             onMouseOver={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.backgroundColor = '#f8fafc'; }}
-             onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--pioniar-border)'; e.currentTarget.style.backgroundColor = '#ffffff'; }}>
-                
-                {/* Avatar Initials */}
-                <div style={{ 
-                  width: '28px', height: '28px', borderRadius: '0.375rem', 
-                  background: 'linear-gradient(to bottom right, #f1f5f9, #e2e8f0)', 
-                  border: '1px solid var(--pioniar-border)', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  color: '#475569', fontWeight: 800, fontSize: '0.65rem', textTransform: 'uppercase',
-                  boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)' 
-                }}>
-                  EP
-                </div>
-
-                {/* Profile Text */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pioniar-text)', lineHeight: 1.25 }}>Eep Ridwan</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8', marginTop: '1px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ADMIN SYSTEM</span>
-                </div>
-                
-                {/* Arrow Down */}
-                <span style={{ fontSize: '9px', color: '#94a3b8', marginLeft: '0.25rem' }}>▼</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+             <button onClick={autoTileWindows} title="Susun Jendela" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', color: '#334155', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }} onMouseOver={e=>{e.currentTarget.style.boxShadow='0 4px 8px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor='#cbd5e1';}} onMouseOut={e=>{e.currentTarget.style.boxShadow='0 2px 4px rgba(0,0,0,0.02)'; e.currentTarget.style.borderColor='#e2e8f0';}}>
+               <LayoutGrid size={16} /> Susun Layar
+             </button>
+             
+             <button onClick={handleLogout} style={{ background: '#fff1f2', border: '1px solid #ffe4e6', borderRadius: '10px', color: '#e11d48', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s ease' }} onMouseOver={e=>{e.currentTarget.style.background='#ffe4e6';}} onMouseOut={e=>{e.currentTarget.style.background='#fff1f2';}}>
+               <LogOut size={16} /> Keluar
              </button>
           </div>
         </header>
 
-        {/* 3. CONTENT OUTLET */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--pioniar-bg)', padding: '1rem', overflow: 'hidden' }}>
-          <Outlet />
-        </div>
+        {/* DESKTOP LAYER */}
+        <div ref={desktopRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {/* Subtle Abstract Background Decoration */}
+          <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '50%', height: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
+          <div style={{ position: 'absolute', bottom: '-20%', right: '-10%', width: '60%', height: '60%', background: 'radial-gradient(circle, rgba(16,185,129,0.03) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
+          
+          {openWindows.map(win => {
+            const config = windowRegistry[win.id];
+            if (!config) return null;
+            const Component = config.component;
+            const isActive = win.zIndex === highestZIndex;
 
+            return (
+              <WinBoxWindow
+                key={win.id}
+                id={win.id}
+                title={config.title}
+                icon={config.icon}
+                initialX={win.x}
+                initialY={win.y}
+                initialWidth={config.defaultSize.w}
+                initialHeight={config.defaultSize.h}
+                initialMaximized={config.initialMaximized}
+                isActive={isActive}
+                isMinimized={win.isMinimized}
+                zIndex={win.zIndex}
+                onFocus={() => focusWindow(win.id)}
+                onClose={() => closeWindow(win.id)}
+                onMinimize={() => toggleMinimize(win.id)}
+                forcedX={win.forcedX}
+                forcedY={win.forcedY}
+                forcedW={win.forcedW}
+                forcedH={win.forcedH}
+                layoutId={win.layoutId}
+              >
+                <div style={{ height: '100%', overflow: 'auto', backgroundColor: '#ffffff', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
+                  <Component />
+                </div>
+              </WinBoxWindow>
+            )
+          })}
+        </div>
       </main>
     </div>
   );

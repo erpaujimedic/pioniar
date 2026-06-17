@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Users, WifiHigh, Activity, Clock, Server, Beef, Coffee, DollarSign, Lock, Cpu, HardDrive, Power } from 'lucide-react';
+import { Users, WifiHigh, Activity, Clock, Server, Beef, Coffee, DollarSign, Lock, Cpu, HardDrive, Power, Database } from 'lucide-react';
 
 export default function DashboardOverview() {
   const [activeTab, setActiveTab] = useState('Network');
@@ -28,7 +28,9 @@ export default function DashboardOverview() {
     uptime: '00:00:00',
     speed_mbps: 0,
     cpu_load: '0',
-    memory_usage: '0 MB'
+    memory_usage: '0 MB',
+    board_name: 'Checking...',
+    hdd_usage: '0 MB'
   });
   const [status, setStatus] = useState('Checking...');
 
@@ -134,35 +136,38 @@ export default function DashboardOverview() {
   };
 
   const networkStats = [
-    { label: `Pendapatan (${filter})`, value: formatRupiah(totalRevenue), icon: <DollarSign size={24} />, color: '#10b981' },
-    { label: `Voucher Terjual (${filter})`, value: totalVouchers, icon: <Users size={24} />, color: '#3b82f6' },
-    { label: 'Total User Aktif', value: liveData.active_users, icon: <Activity size={24} />, color: 'var(--pioniar-primary)' },
-    { label: 'Network Speed', value: `${liveData.speed_mbps} Mbps`, icon: <Activity size={24} />, color: 'var(--pioniar-accent)' },
-    { label: 'CPU Load', value: `${liveData.cpu_load}%`, icon: <Cpu size={24} />, color: '#f59e0b' },
-    { label: 'Memory Usage', value: liveData.memory_usage, icon: <HardDrive size={24} />, color: '#8b5cf6' },
+    { label: `Pendapatan (${filter})`, value: formatRupiah(totalRevenue), icon: <DollarSign size={20} />, color: '#10b981', bg: '#ecfdf5' },
+    { label: `Voucher Terjual (${filter})`, value: totalVouchers, icon: <Users size={20} />, color: '#3b82f6', bg: '#eff6ff' },
+    { label: 'Total User Aktif', value: liveData.active_users, icon: <Activity size={20} />, color: '#8b5cf6', bg: '#f3e8ff' },
+    { label: 'Network Speed', value: `${liveData.speed_mbps} Mbps`, icon: <Activity size={20} />, color: '#06b6d4', bg: '#cffafe' },
+    { label: 'CPU Load', value: `${liveData.cpu_load}%`, icon: <Cpu size={20} />, color: '#f59e0b', bg: '#fef3c7' },
+    { label: 'Memory Usage', value: liveData.memory_usage, icon: <HardDrive size={20} />, color: '#ec4899', bg: '#fce7f3' },
+    { label: 'Model Router', value: liveData.board_name, icon: <Server size={20} />, color: '#6366f1', bg: '#e0e7ff' },
+    { label: 'Penyimpanan (HDD)', value: liveData.hdd_usage, icon: <Database size={20} />, color: '#14b8a6', bg: '#ccfbf1' },
     { 
       label: 'Status Router', 
       value: status, 
-      icon: <WifiHigh size={24} />, 
-      color: status === 'Online' ? 'var(--pioniar-accent)' : '#ef4444',
-      action: <button onClick={handleRebootClick} disabled={isRebooting || status === 'Offline'} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.35rem 0.6rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '0.5rem', fontSize: '0.7rem', fontWeight: 600, cursor: (isRebooting || status === 'Offline') ? 'not-allowed' : 'pointer', opacity: (isRebooting || status === 'Offline') ? 0.5 : 1 }}><Power size={12}/> Reboot</button>
+      icon: <WifiHigh size={20} />, 
+      color: status === 'Online' ? '#10b981' : '#ef4444',
+      bg: status === 'Online' ? '#ecfdf5' : '#fee2e2',
+      action: <button onClick={handleRebootClick} disabled={isRebooting || status === 'Offline'} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', cursor: (isRebooting || status === 'Offline') ? 'not-allowed' : 'pointer', opacity: (isRebooting || status === 'Offline') ? 0.5 : 1, transition: 'all 0.2s', fontWeight: '500' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}><Power size={14}/> Reboot</button>
     },
-    { label: 'Uptime Router', value: liveData.uptime, icon: <Clock size={24} />, color: 'var(--pioniar-warning)' }
+    { label: 'Uptime Router', value: liveData.uptime, icon: <Clock size={20} />, color: '#f97316', bg: '#ffedd5' }
   ];
 
   const renderStatsGrid = (statsArray) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
       {statsArray.map((stat, i) => (
-        <div key={i} className="glass-panel" style={{ padding: '1rem 1.25rem', borderRadius: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div key={i} style={{ padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)', transition: 'transform 0.2s, box-shadow 0.2s' }} onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)'}} onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.02)'}}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{stat.label}</p>
-            <div style={{ color: stat.color }}>
-              {React.cloneElement(stat.icon, { size: 18 })}
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: stat.bg, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {React.cloneElement(stat.icon, { size: 16 })}
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: stat.color === '#ef4444' ? '#ef4444' : 'inherit' }}>{stat.value}</h3>
             {stat.action && stat.action}
+          </div>
+          <div>
+            <p style={{ color: '#64748b', fontSize: '11px', fontWeight: '600', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: stat.color === '#ef4444' ? '#ef4444' : '#0f172a' }}>{stat.value}</h3>
           </div>
         </div>
       ))}
@@ -170,106 +175,62 @@ export default function DashboardOverview() {
   );
 
   return (
-    <div className="animate-fade-in hide-scrollbar" style={{ height: '100%', overflowY: 'auto', paddingRight: '0.25rem' }}>
-      {/* Top Header Actions */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        flexWrap: 'wrap', 
-        gap: '1rem',
-        position: 'sticky',
-        top: '-1rem',
-        zIndex: 50,
-        backgroundColor: 'var(--pioniar-bg)',
-        paddingTop: '1rem',
-        paddingBottom: '1rem',
-        marginTop: '-1rem',
-        marginBottom: '1rem',
-        borderBottom: '1px solid var(--pioniar-border)'
-      }}>
+    <div className="hide-scrollbar" style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff' }}>
+      
+      {/* Premium Action Bar */}
+      <div style={{ display: 'flex', gap: '16px', padding: '20px 24px', backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', alignItems: 'center', flexShrink: 0 }}>
         
-        {/* Tab Switcher */}
-        <div style={{ 
-          display: 'inline-flex', 
-          backgroundColor: '#f1f5f9', 
-          padding: '0.35rem', 
-          borderRadius: '1rem', 
-          border: '1px solid var(--pioniar-border)' 
-        }}>
-          {['Network', 'Farm', 'Snack'].map(tab => {
-            const isLocked = tab === 'Farm' || tab === 'Snack';
-            return (
-              <button
-                key={tab}
-                onClick={() => !isLocked && setActiveTab(tab)}
-                disabled={isLocked}
-                title={isLocked ? "Fitur Belum Tersedia" : ""}
-                style={{
-                  padding: '0.5rem 1.5rem',
-                  borderRadius: '0.75rem',
-                  border: 'none',
-                  fontWeight: activeTab === tab ? 700 : 600,
-                  fontSize: '0.85rem',
-                  backgroundColor: activeTab === tab ? '#ffffff' : 'transparent',
-                  color: activeTab === tab ? 'var(--pioniar-primary)' : (isLocked ? '#cbd5e1' : '#64748b'),
-                  boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  cursor: isLocked ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  opacity: isLocked ? 0.7 : 1
-                }}
-              >
-                {tab === 'Network' && <Server size={16} />}
-                {tab === 'Farm' && <Beef size={16} />}
-                {tab === 'Snack' && <Coffee size={16} />}
-                {tab}
-                {isLocked && <Lock size={12} color="#cbd5e1" />}
-              </button>
-            )
-          })}
+        <div style={{ position: 'relative' }}>
+          <select value={activeTab} onChange={(e) => setActiveTab(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc', borderRadius: '8px', color: '#0f172a', fontWeight: '600', cursor: 'pointer', appearance: 'none', paddingRight: '40px' }}>
+            <option value="Network">Network Server</option>
+            <option value="Farm" disabled>Farm (Locked)</option>
+            <option value="Snack" disabled>Snack (Locked)</option>
+          </select>
+          <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
         </div>
 
-        {/* Filter Selection */}
-        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.35rem', borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)' }}>
-          {['Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Tahun Ini', 'Semua'].map(f => (
-            <button 
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{ 
-                padding: '0.4rem 0.8rem', borderRadius: '0.5rem', border: 'none', 
-                cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, transition: 'all 0.2s', 
-                backgroundColor: filter === f ? '#ffffff' : 'transparent', 
-                color: filter === f ? 'var(--pioniar-primary)' : '#64748b', 
-                boxShadow: filter === f ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' 
-              }}
-            >
-              {f}
-            </button>
-          ))}
+        <div style={{ width: '1px', height: '24px', backgroundColor: '#e2e8f0', margin: '0 4px' }}></div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '4px', padding: '4px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', overflowX: 'auto' }} className="hide-scrollbar">
+            {['Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Tahun Ini', 'Semua'].map(f => (
+              <button 
+                key={f}
+                onClick={() => setFilter(f)} 
+                style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', backgroundColor: filter === f ? '#ffffff' : 'transparent', color: filter === f ? '#0f172a' : '#64748b', fontWeight: filter === f ? '600' : '500', fontSize: '13px', cursor: 'pointer', boxShadow: filter === f ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
+        
+        <div style={{ flex: 1 }}></div>
       </div>
+
+      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
 
       {/* Network View */}
       {activeTab === 'Network' && (
-        <div className="animate-slide-up">
+        <div>
           {renderStatsGrid(networkStats)}
-          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Aktivitas Network Terkini</h3>
-            <p style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.875rem' }}>Sistem MikroTik terhubung dan termonitor secara real-time. Terakhir login: <strong>{liveData.latest_login}</strong></p>
+          
+          <div style={{ padding: '24px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', borderRadius: '16px', marginBottom: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0', color: '#0f172a' }}>Aktivitas Network Terkini</h3>
+            <p style={{ color: '#475569', fontSize: '14px', margin: 0 }}>Sistem MikroTik terhubung dan termonitor secara real-time. Terakhir login: <strong style={{ color: '#0f172a' }}>{liveData.latest_login}</strong></p>
           </div>
           
           {/* Anti-Lag Control */}
-          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ padding: '24px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
             <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Activity size={18} color={antiLagEnabled ? 'var(--pioniar-accent)' : 'var(--pioniar-text-muted)'} /> 
+              <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: antiLagEnabled ? '#10b981' : '#94a3b8' }}></div>
                 QoS Anti-Lag Gaming
               </h3>
-              <p style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem', maxWidth: '600px', margin: 0, lineHeight: 1.5 }}>
-                Memprioritaskan ICMP (Ping) dan lalu lintas Game Online (seperti Mobile Legends, PUBG, FF) agar pemain tidak mengalami *lag* atau *ping merah* saat pengguna lain sedang mengunduh file besar.
+              <p style={{ color: '#475569', fontSize: '14px', maxWidth: '600px', margin: 0, lineHeight: 1.5 }}>
+                Memprioritaskan ICMP (Ping) dan lalu lintas Game Online agar pemain tidak mengalami lag saat unduhan besar.
               </p>
             </div>
             <div>
@@ -277,23 +238,24 @@ export default function DashboardOverview() {
                 onClick={handleToggleAntiLag} 
                 disabled={isTogglingLag || status === 'Offline'}
                 style={{ 
-                  backgroundColor: antiLagEnabled ? 'var(--pioniar-accent)' : '#e2e8f0', 
-                  color: antiLagEnabled ? '#fff' : '#64748b',
-                  border: 'none', 
-                  padding: '0.7rem 1.5rem', 
-                  borderRadius: '2rem', 
-                  fontWeight: 700, 
-                  fontSize: '0.85rem',
+                  backgroundColor: antiLagEnabled ? '#10b981' : '#ffffff', 
+                  color: antiLagEnabled ? '#ffffff' : '#475569',
+                  border: `1px solid ${antiLagEnabled ? '#10b981' : '#e2e8f0'}`, 
+                  padding: '10px 20px', 
+                  borderRadius: '10px', 
+                  fontWeight: '600', 
+                  fontSize: '14px',
                   cursor: (isTogglingLag || status === 'Offline') ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
-                  boxShadow: antiLagEnabled ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
-                  opacity: (isTogglingLag || status === 'Offline') ? 0.6 : 1
+                  gap: '8px',
+                  opacity: (isTogglingLag || status === 'Offline') ? 0.6 : 1,
+                  boxShadow: antiLagEnabled ? '0 4px 6px rgba(16, 185, 129, 0.2)' : 'none',
+                  transition: 'all 0.2s'
                 }}
               >
-                {isTogglingLag ? 'Memproses...' : (antiLagEnabled ? 'ON - Aktif' : 'OFF - Mati')}
+                {isTogglingLag ? <div className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid', borderTopColor: 'transparent', borderRadius: '50%' }}></div> : <Power size={16} />}
+                {antiLagEnabled ? 'Aktif' : 'Mati'}
               </button>
             </div>
           </div>
@@ -302,48 +264,58 @@ export default function DashboardOverview() {
 
       {/* Farm View Placeholder */}
       {activeTab === 'Farm' && (
-        <div className="animate-slide-up">
+        <div>
           {renderStatsGrid([
-            { label: 'Total Populasi', value: '45 Ekor', icon: <Beef size={24} />, color: 'var(--pioniar-primary)' },
-            { label: 'Sapi Sakit', value: '2 Ekor', icon: <Activity size={24} />, color: '#ef4444' },
-            { label: 'Susu Hari Ini', value: '120 Liter', icon: <Coffee size={24} />, color: 'var(--pioniar-accent)' }
+            { label: 'Total Populasi', value: '45 Ekor', icon: <Beef size={24} />, color: '#2563eb' },
+            { label: 'Sapi Sakit', value: '2 Ekor', icon: <Activity size={24} />, color: '#cc0000' },
+            { label: 'Susu Hari Ini', value: '120 Liter', icon: <Coffee size={24} />, color: '#008800' }
           ])}
-          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Log Peternakan</h3>
-            <p style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.875rem' }}>Pemberian pakan pagi selesai. Menunggu jadwal pakan sore.</p>
+          <div style={{ padding: '8px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', borderRadius: '2px' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#000' }}>Log Peternakan</h3>
+            <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>Pemberian pakan pagi selesai. Menunggu jadwal pakan sore.</p>
           </div>
         </div>
       )}
 
       {/* Snack View Placeholder */}
       {activeTab === 'Snack' && (
-        <div className="animate-slide-up">
+        <div>
           {renderStatsGrid([
-            { label: 'Penjualan Hari Ini', value: 'Rp 450K', icon: <Activity size={24} />, color: 'var(--pioniar-accent)' },
-            { label: 'Pesanan Aktif', value: '5 Pesanan', icon: <Clock size={24} />, color: 'var(--pioniar-warning)' },
-            { label: 'Stok Kritis', value: '2 Item', icon: <Coffee size={24} />, color: '#ef4444' }
+            { label: 'Penjualan Hari Ini', value: 'Rp 450K', icon: <Activity size={24} />, color: '#008800' },
+            { label: 'Pesanan Aktif', value: '5 Pesanan', icon: <Clock size={24} />, color: '#cc6600' },
+            { label: 'Stok Kritis', value: '2 Item', icon: <Coffee size={24} />, color: '#cc0000' }
           ])}
-          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Aktivitas Kafe</h3>
-            <p style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.875rem' }}>Kopi Susu Gula Aren menjadi item terlaris hari ini.</p>
+          <div style={{ padding: '8px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', borderRadius: '2px' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#000' }}>Aktivitas Kafe</h3>
+            <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>Kopi Susu Gula Aren menjadi item terlaris hari ini.</p>
           </div>
         </div>
       )}
+      
+      </div>
 
-      {/* Reboot Modal */}
+      {/* Reboot Modal (WinBox Style) */}
       {showRebootModal && createPortal(
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '400px', borderRadius: 'var(--radius-xl)', padding: '2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '50%' }}><Power size={40} color="#ef4444" /></div>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="os-title-bar">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Power size={12} /> Restart Router
+              </div>
+              <div className="os-title-icons">
+                <button onClick={() => setShowRebootModal(false)}><X size={12} /></button>
+              </div>
             </div>
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Restart Router?</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Koneksi internet klien akan terputus sementara hingga router menyala kembali (sekitar 1-2 menit).</p>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="button" className="btn" onClick={() => setShowRebootModal(false)} style={{ flex: 1 }}>Batal</button>
-              <button type="button" className="btn" onClick={confirmReboot} disabled={isRebooting} style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff', border: 'none', display: 'flex', justifyContent: 'center' }}>
-                {isRebooting ? 'Memproses...' : 'Ya, Restart'}
-              </button>
+            <div className="os-body" style={{ textAlign: 'center' }}>
+              <div style={{ padding: '8px 0' }}>
+                <p style={{ color: '#000', marginBottom: '16px', fontSize: '13px' }}>Koneksi internet klien akan terputus sementara hingga router menyala kembali (sekitar 1-2 menit).</p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <button type="button" onClick={() => setShowRebootModal(false)} style={{ padding: '4px 16px', border: '1px solid #e2e8f0', backgroundColor: '#f1f5f9', cursor: 'pointer', borderRadius: '2px', fontSize: '13px' }}>Batal</button>
+                  <button type="button" onClick={confirmReboot} disabled={isRebooting} style={{ padding: '4px 16px', border: '1px solid #e2e8f0', backgroundColor: '#f1f5f9', cursor: (isRebooting ? 'not-allowed' : 'pointer'), borderRadius: '2px', fontSize: '13px', fontWeight: 'bold' }}>
+                    {isRebooting ? 'Memproses...' : 'Ya, Restart'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>,

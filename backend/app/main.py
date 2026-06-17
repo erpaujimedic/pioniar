@@ -25,15 +25,26 @@ app = FastAPI(
 # Enable CORS for the React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"], # Added * temporarily for local testing
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173", 
+        "https://pioniar.com", 
+        "https://www.pioniar.com",
+        "https://pioniar.web.app",
+        "https://pioniar.firebaseapp.com",
+        "*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+from fastapi.responses import RedirectResponse
+
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to PIONIAR API Ecosystem"}
+    # Redirect root to frontend website so Tripay reviewers can see the actual site
+    return RedirectResponse(url="https://pioniar.com")
 
 # Register Routers
 app.include_router(wifi.router, prefix="/api/wifi", tags=["Wifi"])

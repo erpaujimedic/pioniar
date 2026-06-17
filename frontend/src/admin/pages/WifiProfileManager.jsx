@@ -111,233 +111,206 @@ export default function WifiProfileManager() {
     <div className="animate-fade-in" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Main Container */}
-      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '0.5rem', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#ffffff', overflow: 'hidden' }}>
         
-        {/* Top Control Bar Card */}
-        <div className="hide-scrollbar glass-panel" style={{ borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)', padding: '0.75rem 1rem', display: 'flex', flexWrap: 'nowrap', gap: '0.5rem', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '0 0 auto' }}>
-            <button 
-              onClick={fetchProfiles} 
-              disabled={loading}
-              title="Refresh Data"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', backgroundColor: '#ffffff', border: '1px solid var(--pioniar-border)', color: '#64748b', borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', flexShrink: 0 }} 
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} 
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
-            >
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} color="#64748b" />
-            </button>
-          </div>
+        {/* Action Bar */}
+        <div style={{ display: 'flex', gap: '12px', padding: '16px 20px', backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+          <button 
+            onClick={() => {
+              setFormData({ id: '', name: '', rate_limit: '', shared_users: '1', price: '', validity: '' });
+              setIsEditMode(false);
+              setShowModal(true);
+            }}
+            style={{ backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#2563eb'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#3b82f6'}
+          >
+            <Plus size={16} /> Tambah Paket
+          </button>
           
-          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '0.5rem', alignItems: 'center', flex: '1 1 auto', justifyContent: 'flex-end', minWidth: 0 }}>
-            <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, maxWidth: '300px' }}>
-              <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <div style={{ flex: 1 }}></div>
+
+          {/* Filter & Search */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', padding: '6px 12px', borderRadius: '8px', transition: 'border-color 0.2s' }}>
+              <Search size={16} color="#64748b" />
               <input 
                 type="text" 
                 placeholder="Cari paket..." 
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{ padding: '0.45rem 1rem 0.45rem 2.25rem', borderRadius: '0.5rem', border: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', color: 'var(--pioniar-text)', fontSize: '0.85rem', width: '100%', outline: 'none', transition: 'all 0.2s' }}
+                style={{ border: 'none', outline: 'none', padding: '2px 8px', fontSize: '14px', width: '180px', backgroundColor: 'transparent', color: '#0f172a' }}
               />
             </div>
+            
             <button 
-              onClick={() => {
-                setFormData({ id: '', name: '', rate_limit: '', shared_users: '1', price: '', validity: '' });
-                setIsEditMode(false);
-                setShowModal(true);
-              }}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.875rem', backgroundColor: 'var(--pioniar-primary)', border: '1px solid var(--pioniar-primary)', color: '#ffffff', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(40, 96, 134, 0.2)', flexShrink: 0, whiteSpace: 'nowrap' }} 
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1e4a68'} 
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--pioniar-primary)'}
+              onClick={fetchProfiles} 
+              disabled={loading}
+              title="Refresh Data"
+              style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #e2e8f0', padding: '8px', borderRadius: '8px', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}
             >
-              <Plus size={14} strokeWidth={3} /> Tambah Paket
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
 
-        {/* Table Card */}
-        <div className="glass-panel" style={{ borderRadius: '0.75rem', border: '1px solid var(--pioniar-border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', backgroundColor: '#ffffff' }}>
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '3rem', color: 'var(--pioniar-text-muted)' }}>
-              <HexLoader size={48} color="var(--pioniar-primary)" />
-              <p style={{ marginTop: '1rem' }}>Memuat data paket...</p>
-            </div>
-          ) : filteredProfiles.length === 0 ? (
-            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--pioniar-text-muted)' }}>
-              <div style={{ background: '#f8fafc', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid #e2e8f0' }}>
-                <Package size={24} color="#94a3b8" />
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--pioniar-primary)' }}>Data kosong.</div>
-              <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{searchTerm ? 'Tidak ada kecocokan pencarian paket.' : 'Tidak ada paket yang terdaftar.'}</div>
-            </div>
-          ) : (
-            <div style={{ minWidth: '800px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-              <div style={{ padding: '0.8rem 1.5rem', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px', fontWeight: 600, fontSize: '0.75rem', color: '#94a3b8', letterSpacing: '0.05em', borderBottom: '1px solid var(--pioniar-border)', backgroundColor: '#f8fafc', textTransform: 'uppercase' }}>
-                <div>NAMA PAKET</div>
-                <div>LIMIT KECEPATAN</div>
-                <div>MAKS. PERANGKAT</div>
-                <div>MASA AKTIF</div>
-                <div>HARGA (RP)</div>
-                <div style={{ textAlign: 'center' }}>AKSI</div>
-              </div>
-              
-              <div style={{ backgroundColor: '#ffffff', flex: 1, overflowY: 'auto' }}>
-                {currentProfiles.map(p => (
-                  <div key={p.id} style={{ padding: '0.6rem 1.5rem', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px', alignItems: 'center', borderBottom: '1px solid var(--pioniar-border)', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pioniar-text)' }}>{p.name}</span>
-                    <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{p.rate_limit || 'Tidak dibatasi'}</span>
-                    <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{p.shared_users}</span>
-                    <span style={{ color: 'var(--pioniar-text-muted)', fontSize: '0.85rem' }}>{p.validity || 'Tanpa Batas'}</span>
-                    <span style={{ color: 'var(--pioniar-success)', fontWeight: 600, fontSize: '0.9rem' }}>Rp {p.price?.toLocaleString('id-ID') || 0}</span>
-                    
-                    <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
-                      <button 
-                        onClick={() => {
-                          setFormData({ id: p.id, name: p.name, rate_limit: p.rate_limit, shared_users: p.shared_users, price: p.price, validity: p.validity || '' });
-                          setIsEditMode(true);
-                          setShowModal(true);
-                        }}
-                        title="Edit Paket"
-                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '0.4rem', borderRadius: '0.25rem', transition: 'all 0.2s' }} 
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.1)'; e.currentTarget.style.color = 'var(--pioniar-warning)' }} 
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b' }}
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setDeleteData({ id: p.id, name: p.name });
-                          setShowDeleteModal(true);
-                        }}
-                        title="Hapus Paket"
-                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '0.4rem', borderRadius: '0.25rem', transition: 'all 0.2s' }} 
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444' }} 
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b' }}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Premium Table */}
+        <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: '0 20px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', marginTop: '8px' }}>
+            <thead style={{ backgroundColor: '#ffffff', position: 'sticky', top: 0, zIndex: 1 }}>
+              <tr>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Nama Paket</th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Limit Kecepatan</th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Maks. Perangkat</th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Masa Aktif</th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Harga Jual</th>
+                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Memuat data...</td>
+                </tr>
+              ) : currentProfiles.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Data kosong.</td>
+                </tr>
+              ) : (
+                currentProfiles.map(p => (
+                  <tr key={p.id} style={{ cursor: 'pointer', transition: 'background-color 0.2s', borderBottom: '1px solid #f1f5f9' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td style={{ padding: '16px 12px', fontWeight: '500', color: '#0f172a' }}>{p.name}</td>
+                    <td style={{ padding: '16px 12px', color: '#475569' }}>
+                      <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '13px' }}>{p.rate_limit || 'Tidak dibatasi'}</span>
+                    </td>
+                    <td style={{ padding: '16px 12px', color: '#475569' }}>{p.shared_users} Device</td>
+                    <td style={{ padding: '16px 12px', color: '#475569' }}>{p.validity || 'Tanpa Batas'}</td>
+                    <td style={{ padding: '16px 12px', color: '#10b981', fontWeight: '600' }}>Rp {p.price?.toLocaleString('id-ID') || 0}</td>
+                    <td style={{ padding: '16px 12px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                        <button onClick={() => { setFormData({ id: p.id, name: p.name, rate_limit: p.rate_limit, shared_users: p.shared_users, price: p.price, validity: p.validity || '' }); setIsEditMode(true); setShowModal(true); }} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', cursor: 'pointer', padding: '6px', borderRadius: '6px', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#e2e8f0'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#f8fafc'}><Edit2 size={16} color="#475569" /></button>
+                        <button onClick={() => { setDeleteData({ id: p.id, name: p.name }); setShowDeleteModal(true); }} style={{ background: '#fef2f2', border: '1px solid #fee2e2', cursor: 'pointer', padding: '6px', borderRadius: '6px', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#fee2e2'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#fef2f2'}><Trash2 size={16} color="#ef4444" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination Footer */}
-          {!loading && filteredProfiles.length > 0 && (
-            <div style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--pioniar-border)', backgroundColor: '#ffffff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--pioniar-text-muted)' }}>
-                  <span>Tampilkan</span>
-                  <select 
-                    value={itemsPerPage} 
-                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                    style={{ padding: '0.2rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: 'var(--pioniar-bg)', color: 'var(--pioniar-text)', fontSize: '0.8rem', outline: 'none' }}
-                  >
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                    <option value={150}>150</option>
-                  </select>
-                  <span>data</span>
-                </div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--pioniar-text-muted)', borderLeft: '1px solid var(--pioniar-border)', paddingLeft: '0.75rem' }}>
-                  Menampilkan {filteredProfiles.length === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredProfiles.length)} dari {filteredProfiles.length}
-                </span>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: currentPage === 1 ? 'transparent' : '#ffffff', color: currentPage === 1 ? '#cbd5e1' : 'var(--pioniar-text)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
-                >
-                  Prev
-                </button>
-                <button 
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.25rem', border: '1px solid var(--pioniar-border)', backgroundColor: currentPage === totalPages || totalPages === 0 ? 'transparent' : '#ffffff', color: currentPage === totalPages || totalPages === 0 ? '#cbd5e1' : 'var(--pioniar-text)', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+        {/* Pagination Status Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff', fontSize: '14px', color: '#475569' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>Menampilkan {filteredProfiles.length > 0 ? `${indexOfFirstItem + 1} - ${Math.min(indexOfLastItem, filteredProfiles.length)} dari ` : ''}<strong>{filteredProfiles.length}</strong> total item</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <span>Per Halaman:</span>
+               <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc' }}>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={150}>150</option>
+               </select>
+             </div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : '#ffffff', color: currentPage === 1 ? '#cbd5e1' : '#475569', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Sebelumnya</button>
+               <span style={{ fontWeight: '500', color: '#0f172a' }}>{currentPage} / {totalPages || 1}</span>
+               <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f8fafc' : '#ffffff', color: currentPage === totalPages || totalPages === 0 ? '#cbd5e1' : '#475569', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Selanjutnya</button>
+             </div>
+          </div>
         </div>
       </div>
 
-      {/* Form Modal */}
+      {/* Form Modal (Premium Style) */}
       {showModal && createPortal(
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '400px', borderRadius: 'var(--radius-xl)', padding: '2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative' }}>
-            <button onClick={() => setShowModal(false)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'var(--pioniar-text-muted)', cursor: 'pointer' }}>
-              <X size={20} />
-            </button>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{isEditMode ? 'Edit Paket' : 'Tambah Paket Baru'}</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Atur detail teknis paket hotspot.</p>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '100%', maxWidth: '480px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Nama Paket *</label>
-                <input required type="text" className="input-base" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} disabled={isEditMode && formData.name === 'default'} />
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: isEditMode ? '#fef3c7' : '#e0f2fe', color: isEditMode ? '#d97706' : '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Package size={18} />
+                </div>
+                {isEditMode ? 'Edit Paket' : 'Tambah Paket Baru'}
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Limit Kecepatan (Rate Limit)</label>
-                <input type="text" className="input-base" placeholder="Contoh: 2M/2M" value={formData.rate_limit} onChange={(e) => setFormData({...formData, rate_limit: e.target.value})} />
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Format: RX/TX (Contoh: 2M/2M untuk 2 Mbps)</span>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Maks. Perangkat (Shared Users) *</label>
-                <input required type="number" min="1" className="input-base" value={formData.shared_users} onChange={(e) => setFormData({...formData, shared_users: e.target.value})} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Batas Masa Aktif (Session Uptime)</label>
-                <select 
-                  className="input-base"
-                  value={formData.validity}
-                  onChange={(e) => setFormData({...formData, validity: e.target.value})}
-                  style={{ width: '100%' }}
-                >
-                  <option value="">Tanpa Batas Waktu</option>
-                  <option value="1m">1 Menit (Untuk Testing)</option>
-                  <option value="1h">1 Jam</option>
-                  <option value="3h">3 Jam</option>
-                  <option value="8h">8 Jam</option>
-                  <option value="1d">1 Hari (24 Jam)</option>
-                  <option value="3d">3 Hari</option>
-                  <option value="7d">1 Minggu</option>
-                  <option value="30d">1 Bulan (30 Hari)</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--pioniar-text-muted)', marginBottom: '0.5rem' }}>Harga Jual (Rp) *</label>
-                <input required type="number" min="0" className="input-base" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
-              </div>
+              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px', borderRadius: '6px', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#e2e8f0'} onMouseOut={e=>e.currentTarget.style.backgroundColor='transparent'}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div style={{ padding: '24px' }}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Nama Paket *</label>
+                  <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} disabled={isEditMode && formData.name === 'default'} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Limit Kecepatan (Rate Limit)</label>
+                  <input type="text" placeholder="Contoh: 2M/2M" value={formData.rate_limit} onChange={(e) => setFormData({...formData, rate_limit: e.target.value})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                  <span style={{ fontSize: '12px', color: '#64748b', marginTop: '6px', display: 'block' }}>Format: RX/TX (Contoh: 2M/2M untuk 2 Mbps)</span>
+                </div>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Maks. Perangkat *</label>
+                    <input required type="number" min="1" value={formData.shared_users} onChange={(e) => setFormData({...formData, shared_users: e.target.value})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Harga Jual (Rp) *</label>
+                    <input required type="number" min="0" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Batas Masa Aktif (Uptime)</label>
+                  <select 
+                    value={formData.validity}
+                    onChange={(e) => setFormData({...formData, validity: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}
+                  >
+                    <option value="">Tanpa Batas Waktu</option>
+                    <option value="1m">1 Menit (Untuk Testing)</option>
+                    <option value="1h">1 Jam</option>
+                    <option value="3h">3 Jam</option>
+                    <option value="8h">8 Jam</option>
+                    <option value="1d">1 Hari (24 Jam)</option>
+                    <option value="3d">3 Hari</option>
+                    <option value="7d">1 Minggu</option>
+                    <option value="30d">1 Bulan (30 Hari)</option>
+                  </select>
+                </div>
 
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                <button type="button" className="btn" onClick={() => setShowModal(false)} style={{ flex: 1 }}>Batal</button>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                  {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : 'Simpan'}
-                </button>
-              </div>
-            </form>
+                <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setShowModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
+                  <button type="submit" disabled={isSubmitting} style={{ padding: '10px 24px', border: 'none', backgroundColor: isEditMode ? '#d97706' : '#3b82f6', color: '#ffffff', cursor: isSubmitting ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isSubmitting ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                    {isSubmitting ? 'Memproses...' : (isEditMode ? 'Simpan Perubahan' : 'Tambah Paket')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>,
         document.body
       )}
 
-      {/* Delete Modal */}
+      {/* Delete Modal (Premium Style) */}
       {showDeleteModal && deleteData && createPortal(
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '400px', borderRadius: 'var(--radius-xl)', padding: '2rem', backgroundColor: 'var(--pioniar-bg)', position: 'relative', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '50%' }}><Trash2 size={40} color="#ef4444" /></div>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '100%', maxWidth: '360px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            
+            <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Trash2 size={24} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: '0 0 8px 0' }}>Hapus Paket</h3>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
+                Hapus paket <strong>{deleteData.name}</strong> secara permanen?
+              </p>
             </div>
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Hapus {deleteData.name}?</h2>
-            <p style={{ color: 'var(--pioniar-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Tindakan ini tidak dapat dibatalkan.</p>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="button" className="btn" onClick={() => { setShowDeleteModal(false); setDeleteData(null); }} style={{ flex: 1 }}>Batal</button>
-              <button type="button" className="btn" onClick={confirmDelete} disabled={isSubmitting} style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff', border: 'none', display: 'flex', justifyContent: 'center' }}>
-                {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : 'Ya, Hapus'}
+            
+            <div style={{ padding: '24px', display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
+              <button type="button" onClick={() => { setShowDeleteModal(false); setDeleteData(null); }} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
+              <button type="button" onClick={confirmDelete} disabled={isSubmitting} style={{ flex: 1, padding: '10px', border: 'none', backgroundColor: '#ef4444', color: '#ffffff', cursor: isSubmitting ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isSubmitting ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(239, 68, 68, 0.2)' }}>
+                {isSubmitting ? 'Memproses...' : 'Ya, Hapus'}
               </button>
             </div>
           </div>

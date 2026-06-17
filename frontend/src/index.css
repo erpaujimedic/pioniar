@@ -1,36 +1,38 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Core Colors */
-  --pioniar-bg: #0f1115; /* Dark sleak background */
-  --pioniar-bg-secondary: #1a1d24;
-  --pioniar-primary: #3b82f6; /* Blue for Wifi/Network */
-  --pioniar-primary-glow: rgba(59, 130, 246, 0.5);
-  --pioniar-accent: #10b981; /* Green for success/Ternak */
-  --pioniar-warning: #f59e0b; /* Orange for Snack/Warning */
-  --pioniar-text: #f8fafc;
-  --pioniar-text-muted: #94a3b8;
-  --pioniar-border: #334155;
+  /* WinBox Core Colors */
+  --pioniar-bg: #e5e5e5; /* Winbox outer background */
+  --pioniar-bg-secondary: #f0f0f0; /* Winbox inner panels */
+  --pioniar-bg-content: #ffffff; /* Winbox text areas */
+  --pioniar-primary: #0066cc; /* Winbox selection blue */
+  --pioniar-primary-glow: rgba(0, 102, 204, 0.2);
+  --pioniar-accent: #008800; /* Dark green for success */
+  --pioniar-warning: #cc0000; /* Red for errors/warning */
+  --pioniar-text: #000000;
+  --pioniar-text-muted: #666666;
+  --pioniar-border: #a0a0a0;
+  --pioniar-border-light: #cccccc;
 
-  /* Client Wifi Colors */
+  /* Client Wifi Colors (Keep existing for client side) */
   --client-bg: #f8fafc;
   --client-bg-card: #ffffff;
   --client-primary: #2563eb;
   --client-text: #0f172a;
   --client-text-muted: #64748b;
 
-  /* Fonts */
-  --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  /* Fonts - WinBox uses standard OS fonts */
+  --font-heading: 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-body: 'Segoe UI', Tahoma, Arial, sans-serif;
 
-  /* Effects */
-  --shadow-glow: 0 0 20px var(--pioniar-primary-glow);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  /* Effects - WinBox is flat and sharp */
+  --shadow-glow: none;
+  --shadow-card: 1px 1px 3px rgba(0,0,0,0.2);
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
 }
 
 * {
@@ -41,7 +43,8 @@
 
 body {
   font-family: var(--font-body);
-  background-color: var(--client-bg); /* Default to client light mode, Admin will force dark */
+  font-size: 12px; /* WinBox uses small 11-12px fonts */
+  background-color: var(--client-bg); 
   color: var(--client-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -63,23 +66,72 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-mode {
-  /* EAM-style Exact Colors */
-  --pioniar-bg: #F8F9FA;
-  --pioniar-bg-secondary: #ffffff;
-  --pioniar-text: #334155; /* slate-700 */
-  --pioniar-text-muted: #64748b; /* slate-500 */
-  --pioniar-border: #e2e8f0; /* slate-200 */
-  --pioniar-primary: #286086; /* EAM Active Blue */
+  /* Pioniar OS Clean Enterprise Colors */
+  --pioniar-bg: #f8fafc; /* Very light cool gray */
+  --pioniar-bg-secondary: #ffffff; /* Pure white */
+  --pioniar-text: #0f172a; /* Slate 900 */
+  --pioniar-text-muted: #64748b; /* Slate 500 */
+  --pioniar-border: #e2e8f0; /* Slate 200 */
+  --pioniar-primary: #2563eb; /* Blue 600 */
+  --pioniar-primary-glow: rgba(37, 99, 235, 0.2);
 
   background-color: var(--pioniar-bg);
   color: var(--pioniar-text);
-  font-family: var(--font-body);
+  font-family: 'Inter', var(--font-body);
+  font-size: 13px;
 }
 
 .admin-mode .glass-panel {
-  background: #ffffff;
+  background: var(--pioniar-bg-secondary);
   border: 1px solid var(--pioniar-border);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+}
+
+/* Modern OS Specific Utilities */
+.os-window {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.os-window.window-active {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.os-title-bar {
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.os-std-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+}
+
+.os-std-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.os-std-btn.os-mac-close:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
 }
 
 /* Base button styles */
@@ -297,6 +349,88 @@ h1, h2, h3, h4, h5, h6 {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Universal Modal Styles (WinBox Window) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: none;
+  z-index: 9999;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1rem;
+}
+
+.modal-overlay::before,
+.modal-overlay::after {
+  content: "";
+  flex: 1 0 3rem;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 0; /* Sharp corners */
+  padding: 0; /* Content handles its own padding */
+  background-color: var(--pioniar-bg-secondary);
+  border: 1px solid #999999;
+  position: relative;
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* WinBox Specific Modal Components */
+.winbox-title-bar {
+  background-color: #dbeaf5; /* Light blue header */
+  border-bottom: 1px solid var(--pioniar-border);
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: bold;
+  color: #000;
+  font-size: 11px;
+  user-select: none;
+}
+
+.winbox-title-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+}
+
+.winbox-title-icons > button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.winbox-title-icons > button:hover {
+  color: #000;
+}
+
+.winbox-action-bar {
+  background-color: var(--pioniar-bg-secondary);
+  border-bottom: 1px solid var(--pioniar-border);
+  padding: 4px 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.winbox-body {
+  padding: 12px;
+  background-color: var(--pioniar-bg-content);
+  flex: 1;
 }
 
 /* --- Mobile Responsive Rules --- */

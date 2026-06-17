@@ -17,6 +17,9 @@ class BulkGenerateRequest(BaseModel):
     quantity: int = 1
     profile: str = 'voucher_harian'
     limit_uptime: Optional[str] = None
+    char_type: str = 'numeric'
+    length: int = 4
+    prefix: str = 'PION-'
 
 class MarkPrintedRequest(BaseModel):
     usernames: List[str]
@@ -155,9 +158,24 @@ def bulk_generate_voucher(data: BulkGenerateRequest):
     validity = next((p.get('validity', '') for p in sb_profiles if p.get('name') == profile), '')
     price = next((p.get('price', 0) for p in sb_profiles if p.get('name') == profile), 0)
     
+    char_type = getattr(data, 'char_type', 'numeric')
+    length = getattr(data, 'length', 4)
+    prefix = getattr(data, 'prefix', 'PION-')
+    
     for _ in range(quantity):
-        random_str = ''.join(random.choices(string.digits, k=4))
-        username = f"PION-{random_str}"
+        if char_type == 'numeric':
+            pool = string.digits
+        elif char_type == 'lowercase':
+            pool = string.ascii_lowercase
+        elif char_type == 'uppercase':
+            pool = string.ascii_uppercase
+        elif char_type == 'alphanumeric':
+            pool = string.ascii_letters + string.digits
+        else:
+            pool = string.digits
+            
+        random_str = ''.join(random.choices(pool, k=length))
+        username = f"{prefix}{random_str}"
         password = username
         
         success, msg = mikrotik_service.generate_voucher(username, password, profile, validity)
