@@ -27,7 +27,7 @@ function SisaWaktuRenderer({ username }) {
     return () => { mounted = false; };
   }, [username]);
 
-  return <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={16} /> {sisa}</span>;
+  return <span className="flex items-center gap-1.5"><Clock size={16} /> {sisa}</span>;
 }
 
 export default function HotspotStatus() {
@@ -49,46 +49,46 @@ export default function HotspotStatus() {
   }
 
   return (
-    <div className="bg-hex-pattern" style={{ width: '100%', height: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflow: 'hidden', position: 'relative' }}>
-       <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '380px', padding: '2.5rem', borderRadius: '0.75rem', position: 'relative', zIndex: 1, backgroundColor: 'rgba(255, 255, 255, 0.98)', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)' }}>
+    <div className="bg-hex-pattern w-full min-h-[calc(100vh-80px)] flex items-center justify-center p-4 overflow-hidden relative max-md:py-12">
+       <div className="glass-panel animate-slide-up w-full max-w-[380px] p-10 rounded-2xl relative z-10 bg-white/98 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] max-md:p-8">
           
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', marginBottom: '2rem' }}>
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
-              STATUS <span style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>KONEKSI</span>
+          <div className="flex items-center justify-center gap-2.5 mb-8">
+            <span className="font-heading text-2xl font-extrabold text-slate-900 tracking-tight">
+              STATUS <span className="bg-gradient-to-br from-green-500 to-green-600 bg-clip-text text-transparent">KONEKSI</span>
             </span>
           </div>
 
-          <div style={{ backgroundColor: '#f1f5f9', padding: '1.5rem', borderRadius: '0.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-             <div style={{ width: '64px', height: '64px', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+          <div className="bg-slate-100 p-6 rounded-xl mb-6 text-center shadow-inner">
+             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
              </div>
-             <h3 style={{ margin: '0 0 0.5rem 0', color: '#0f172a', fontSize: '1.2rem', fontWeight: 700 }}>{session.username}</h3>
-             <p style={{ margin: 0, color: '#16a34a', fontSize: '0.9rem', fontWeight: 600 }}>Terkoneksi ke Internet</p>
+             <h3 className="m-0 mb-1.5 text-slate-900 text-xl font-bold">{session.username}</h3>
+             <p className="m-0 text-green-600 text-sm font-semibold">Terkoneksi ke Internet</p>
              
-             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1.5rem', textAlign: 'left' }}>
-                <div style={{ backgroundColor: '#fff', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Uptime</div>
-                  <div style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: 700 }}>{session.uptime}</div>
+             <div className="grid grid-cols-2 gap-2.5 mt-6 text-left">
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                  <div className="text-xs text-slate-500 font-semibold mb-0.5">Uptime</div>
+                  <div className="text-sm text-slate-900 font-bold">{session.uptime}</div>
                 </div>
-                <div style={{ backgroundColor: '#fff', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Download</div>
-                  <div style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: 700 }}>{session.bytes_out}</div>
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                  <div className="text-xs text-slate-500 font-semibold mb-0.5">Download</div>
+                  <div className="text-sm text-slate-900 font-bold">{session.bytes_out}</div>
                 </div>
              </div>
 
-             <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0.75rem', borderRadius: '0.375rem', marginTop: '0.5rem', textAlign: 'left' }}>
-                <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700, textTransform: 'uppercase' }}>Batas Waktu Akun</div>
-                <div style={{ fontSize: '1rem', color: '#b91c1c', fontWeight: 800 }}>
+             <div className="bg-red-500/5 border border-red-500/20 p-3 rounded-lg mt-2.5 text-left">
+                <div className="text-[10px] text-red-500 font-bold uppercase tracking-wider mb-1">Batas Waktu Akun</div>
+                <div className="text-base text-red-700 font-extrabold">
                   <SisaWaktuRenderer username={session.username} />
                 </div>
              </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <a href="http://pioniar.wifi/status" className="btn btn-secondary" style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem', fontWeight: 600, borderRadius: '0.375rem', backgroundColor: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1', textAlign: 'center', textDecoration: 'none', display: 'block', boxSizing: 'border-box' }}>
+          <div className="flex flex-col gap-3">
+            <a href="http://pioniar.wifi/status" className="w-full py-3 text-base font-semibold rounded-lg bg-slate-50 text-slate-700 border border-slate-300 text-center no-underline hover:bg-slate-100 hover:shadow-sm transition-all cursor-pointer box-border">
               🔄 Refresh Status
             </a>
-            <a href="http://pioniar.wifi/logout" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem', fontWeight: 600, borderRadius: '0.375rem', backgroundColor: '#ef4444', border: 'none', textAlign: 'center', textDecoration: 'none', display: 'block', color: 'white', boxSizing: 'border-box' }}>
+            <a href="http://pioniar.wifi/logout" className="w-full py-3 text-base font-semibold rounded-lg bg-red-500 text-white border-none text-center no-underline hover:bg-red-600 hover:shadow-[0_4px_12px_rgba(239,68,68,0.2)] hover:-translate-y-px transition-all cursor-pointer box-border">
               Disconnect / Logout
             </a>
           </div>

@@ -31,8 +31,8 @@ export default function HexLoader({ size = 48, color = 'var(--pioniar-primary)' 
   ];
 
   return (
-    <div style={{ width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-      <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+    <div className="inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
         <g className="hex-loader-group">
           <polygon 
             points={hexPoints(50, 50, r)} 

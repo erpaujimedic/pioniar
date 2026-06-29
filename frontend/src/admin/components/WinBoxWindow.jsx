@@ -154,16 +154,17 @@ export default function WinBoxWindow({
     <div 
       ref={windowRef}
       onMouseDownCapture={onFocus}
-      className={`os-window ${isActive ? 'window-active' : ''}`}
+      className={`absolute flex flex-col bg-white border border-slate-200/80 rounded-2xl overflow-hidden transition-[box-shadow,transform] duration-200 ease-in-out max-md:!inset-0 max-md:!w-full max-md:!h-full max-md:!rounded-none max-md:!border-none max-md:!translate-y-0 max-md:!shadow-none ${
+        isActive 
+          ? 'shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(59,130,246,0.3)] -translate-y-0.5' 
+          : 'shadow-[0_10px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]'
+      }`}
       style={{
-        position: 'absolute',
         left: isMaximized ? 12 : pos.x,
         top: isMaximized ? 12 : pos.y,
         width: isMaximized ? 'calc(100% - 24px)' : size.w,
         height: isMaximized ? 'calc(100% - 24px)' : size.h,
         zIndex: zIndex,
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       {/* 8-Directional Resize Handles */}
@@ -178,26 +179,18 @@ export default function WinBoxWindow({
       {/* Title Bar */}
       <div 
         onMouseDown={handleDragStart}
-        className="os-title-bar"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '4px 12px',
-          cursor: isMaximized ? 'default' : 'move',
-          userSelect: 'none'
-        }}
+        className={`flex justify-between items-center px-3 py-1 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 text-slate-900 select-none ${isMaximized ? 'cursor-default' : 'cursor-move'}`}
         onDoubleClick={() => setIsMaximized(!isMaximized)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '13px' }}>
-          {icon && React.cloneElement(icon, { size: 16, strokeWidth: 2, color: '#64748b' })} 
+        <div className="flex items-center gap-2 font-semibold text-[13px]">
+          {icon && React.cloneElement(icon, { size: 16, strokeWidth: 2, className: 'text-slate-500' })} 
           {title}
         </div>
         
-        <div style={{ display: 'flex', gap: '4px', zIndex: 102 }}>
-          <button className="os-std-btn" onClick={onMinimize} title="Minimize"><Minus size={14} /></button>
-          <button className="os-std-btn" onClick={() => setIsMaximized(!isMaximized)} title="Maximize"><Maximize2 size={12} /></button>
-          <button className="os-std-btn os-mac-close" onClick={onClose} title="Close"><X size={14} /></button>
+        <div className="flex gap-1 z-[102]">
+          <button className="hidden md:flex w-7 h-7 rounded-md border-none bg-transparent items-center justify-center cursor-pointer transition-colors text-slate-500 hover:bg-slate-200 hover:text-slate-900" onClick={onMinimize} title="Minimize"><Minus size={14} /></button>
+          <button className="hidden md:flex w-7 h-7 rounded-md border-none bg-transparent items-center justify-center cursor-pointer transition-colors text-slate-500 hover:bg-slate-200 hover:text-slate-900" onClick={() => setIsMaximized(!isMaximized)} title="Maximize"><Maximize2 size={12} /></button>
+          <button className="w-7 h-7 rounded-md border-none bg-transparent flex items-center justify-center cursor-pointer transition-colors text-slate-500 hover:bg-red-100 hover:text-red-500" onClick={onClose} title="Close"><X size={14} /></button>
         </div>
       </div>
 

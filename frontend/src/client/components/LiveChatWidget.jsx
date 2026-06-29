@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Maximize2, Edit, ChevronLeft, Image as ImageIcon } from 'lucide-react';
+import { Send, X, Maximize2, Image as ImageIcon } from 'lucide-react';
+
+/* ── brand palette ── */
+const SLATE  = '#4a6891';
+const SLATEL = '#607b9e';
+const MINT   = '#5aab87';
+const MINTL  = '#7bc4a0';
 
 export default function LiveChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +46,6 @@ export default function LiveChatWidget() {
           if (data.messages && data.messages.length > 0) {
             setMessages(data.messages);
           } else {
-            // Initial Greeting
             setMessages([{ id: 'init', sender: 'Admin Pioniar', text: 'Halo! Ada yang bisa kami bantu hari ini?', time: 'Baru saja', isMe: false }]);
           }
         }
@@ -50,7 +55,7 @@ export default function LiveChatWidget() {
     };
 
     fetchMessages();
-    const intervalId = setInterval(fetchMessages, 2000); // Poll every 2 seconds
+    const intervalId = setInterval(fetchMessages, 2000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -69,131 +74,169 @@ export default function LiveChatWidget() {
     const newText = inputValue.trim();
     setInputValue('');
 
-    // Optimistic UI update
-    const optimisticMessage = {
-      id: Date.now(),
-      sender: username,
-      text: newText,
-      time: 'Mengirim...',
-      isMe: true
-    };
+    const optimisticMessage = { id: Date.now(), sender: username, text: newText, time: 'Mengirim...', isMe: true };
     setMessages(prev => [...prev, optimisticMessage]);
 
     try {
       await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: username,
-          sender: username,
-          text: newText
-        })
+        body: JSON.stringify({ session_id: username, sender: username, text: newText })
       });
     } catch (e) {
       console.error("Failed to send message", e);
     }
   };
 
-
-  // Instagram DM Style Chat Room
-  const renderChatRoom = () => (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff', overflow: 'hidden' }}>
-      <div className="mac-scrollbar" style={{ flex: 1, minHeight: 0, padding: '1.25rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {messages.map((msg) => (
-          <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.isMe ? 'flex-end' : 'flex-start' }}>
-            <div style={{ 
-              backgroundColor: msg.isMe ? '#3b82f6' : '#f1f5f9', 
-              color: msg.isMe ? 'white' : '#0f172a',
-              padding: '0.75rem 1rem', borderRadius: '1.25rem',
-              maxWidth: '75%', fontSize: '0.95rem', lineHeight: 1.4
-            }}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <form onSubmit={handleSend} style={{ padding: '1rem', backgroundColor: 'white', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-          <div style={{ position: 'absolute', left: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#3b82f6', borderRadius: '50%', width: '32px', height: '32px' }}>
-            <ImageIcon size={18} color="white" />
-          </div>
-          <input 
-            type="text" 
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Kirim pesan..." 
-            style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem', borderRadius: '2rem', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#ffffff', fontSize: '0.95rem' }}
-          />
-          {inputValue.trim() && (
-            <button type="submit" style={{ position: 'absolute', right: '16px', background: 'none', border: 'none', color: '#3b82f6', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer' }}>Kirim</button>
-          )}
-        </div>
-      </form>
-    </div>
-  );
-
   return (
     <>
-      <div 
-        className="animate-slide-up"
-        style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999, display: isOpen ? 'none' : 'block' }}
-      >
-        <button 
-          onClick={() => setIsOpen(true)}
-          style={{
-            padding: '0.75rem 1.25rem', borderRadius: '3rem', backgroundColor: '#ffffff', color: '#0f172a', border: '1px solid rgba(0,0,0,0.05)',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'transform 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative' }}>
-            {/* Outline Chat Icon */}
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      {/* Floating Toggle Button */}
+      {!isOpen && (
+        <div className="fixed bottom-6 right-6 z-[9999] max-md:bottom-[85px] max-md:right-4">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="relative flex items-center gap-2.5 bg-white border shadow-[0_8px_32px_rgba(90,171,135,0.15)] rounded-full px-5 py-3 cursor-pointer transition-all duration-300 hover:shadow-[0_12px_40px_rgba(90,171,135,0.25)] hover:-translate-y-0.5 active:translate-y-0 group"
+            style={{ borderColor: `${MINT}30`, color: SLATE }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:scale-110" style={{ color: MINT }}>
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+            <span className="font-bold text-sm">Pesan</span>
             {unreadCount > 0 && (
-              <div style={{ position: 'absolute', top: '-4px', left: '12px', backgroundColor: '#ef4444', color: 'white', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, border: '2px solid white' }}>{unreadCount}</div>
+              <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 border-2 border-white shadow-sm animate-bounce"
+                style={{ background: `linear-gradient(135deg, ${MINTL}, ${MINT})` }}>
+                {unreadCount}
+              </span>
             )}
-            <span style={{ fontWeight: 600, fontSize: '1.05rem', marginLeft: '0.5rem' }}>Pesan</span>
-          </div>
-        </button>
-      </div>
+          </button>
+        </div>
+      )}
 
-      {/* IG DM Style Modal */}
+      {/* Chat Window */}
       {isOpen && (
-        <div 
-          className="animate-fade-in"
-          style={{
-            position: 'fixed', bottom: '2rem', right: '2rem', width: '380px', height: '600px', maxHeight: 'calc(100vh - 8rem)', 
-            zIndex: 10000, borderRadius: '1.25rem', display: 'flex', flexDirection: 'column',
-            overflow: 'hidden', backgroundColor: '#ffffff', border: '1px solid rgba(0,0,0,0.05)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-          }}
-        >
+        <div className="fixed bottom-6 right-6 z-[10000] w-[360px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100dvh-6rem)] max-md:max-h-[calc(100dvh-100px)] flex flex-col rounded-2xl bg-white border shadow-[0_24px_80px_rgba(74,104,145,0.18)] overflow-hidden max-md:bottom-[85px] max-md:right-4"
+          style={{ borderColor: `${SLATE}20` }}>
+          
           {/* Header */}
-          <div style={{ backgroundColor: '#ffffff', borderBottom: '1px solid rgba(0,0,0,0.05)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '32px', paddingBottom: '16px', paddingLeft: '24px', paddingRight: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=ffffff&color=0f172a" alt="Admin" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div className="shrink-0 bg-white border-b px-5 pt-5 pb-4" style={{ borderColor: `${SLATE}10` }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {/* Avatar with brand gradient ring */}
+                <div className="relative w-9 h-9 rounded-full p-[2px]" style={{ background: `linear-gradient(135deg, ${MINTL}, ${SLATEL})` }}>
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                    <img
+                      src={`https://ui-avatars.com/api/?name=Admin&background=f0f7f4&color=5aab87&bold=true`}
+                      alt="Admin"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
+                  {/* Online indicator */}
+                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: MINT }} />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1 }}>
-                  Admin Pioniar
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '2px' }}><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7L6 12.6l1.4-1.4 2.7 2.7 6.6-6.6 1.4 1.4-8 8z" fill="#3b82f6"/></svg>
-                </h3>
+                <div>
+                  <h3 className="m-0 text-sm font-bold flex items-center gap-1 leading-none" style={{ color: SLATE }}>
+                    Admin Pioniar
+                    <svg width="13" height="13" viewBox="0 0 24 24" className="inline ml-0.5" style={{ color: MINT }}>
+                      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7L6 12.6l1.4-1.4 2.7 2.7 6.6-6.6 1.4 1.4-8 8z" fill="currentColor"/>
+                    </svg>
+                  </h3>
+                  <p className="m-0 text-[11px] font-semibold mt-0.5" style={{ color: MINTL }}>Online</p>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: '#0f172a', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center' }}><Maximize2 size={18} /></button>
-                <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: '#0f172a', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 rounded-full bg-transparent border-none cursor-pointer flex items-center justify-center transition-colors"
+                  style={{ color: `${SLATE}80` }}
+                  onMouseEnter={e => e.currentTarget.style.background = `${SLATE}10`}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <Maximize2 size={16} />
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 rounded-full bg-transparent border-none cursor-pointer flex items-center justify-center transition-colors"
+                  style={{ color: `${SLATE}80` }}
+                  onMouseEnter={e => e.currentTarget.style.background = `${SLATE}10`}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <X size={18} />
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Body */}
-          {renderChatRoom()}
+          {/* Messages Area */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3" style={{ background: '#fcfdfd' }}>
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
+                <div
+                  className={`px-4 py-2.5 rounded-2xl max-w-[78%] text-sm leading-relaxed break-words ${
+                    msg.isMe
+                      ? 'text-white rounded-br-md shadow-md'
+                      : 'bg-white border rounded-bl-md shadow-sm'
+                  }`}
+                  style={
+                    msg.isMe 
+                      ? { background: `linear-gradient(135deg, ${MINT}, ${SLATEL})`, boxShadow: `0 4px 12px ${MINT}30` } 
+                      : { borderColor: `${SLATE}15`, color: SLATE }
+                  }
+                >
+                  {msg.text}
+                </div>
+                {msg.time && (
+                  <span className="text-[9px] mt-1 px-1 font-medium" style={{ color: `${SLATE}70` }}>{msg.time}</span>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Bar */}
+          <form onSubmit={handleSend} className="shrink-0 bg-white border-t px-4 py-3 flex items-center gap-2" style={{ borderColor: `${SLATE}10` }}>
+            <div className="relative flex-1 flex items-center">
+              <button
+                type="button"
+                className="absolute left-2 w-8 h-8 rounded-full border-none cursor-pointer flex items-center justify-center shrink-0 transition-transform hover:scale-105"
+                style={{ background: `${MINT}15` }}
+              >
+                <ImageIcon size={15} style={{ color: MINT }} />
+              </button>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Kirim pesan..."
+                className="w-full pl-12 pr-14 py-2.5 rounded-full border outline-none transition-all text-sm"
+                style={{ 
+                  background: '#fcfdfd', 
+                  borderColor: `${SLATE}20`, 
+                  color: SLATE 
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = MINTL;
+                  e.target.style.boxShadow = `0 0 0 2px ${MINT}20`;
+                  e.target.style.background = '#ffffff';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = `${SLATE}20`;
+                  e.target.style.boxShadow = 'none';
+                  e.target.style.background = '#fcfdfd';
+                }}
+              />
+              {inputValue.trim() && (
+                <button
+                  type="submit"
+                  className="absolute right-3 bg-transparent border-none font-bold text-sm cursor-pointer transition-colors"
+                  style={{ color: MINT }}
+                  onMouseEnter={e => e.currentTarget.style.color = MINTL}
+                  onMouseLeave={e => e.currentTarget.style.color = MINT}
+                >
+                  Kirim
+                </button>
+              )}
+            </div>
+          </form>
         </div>
       )}
     </>

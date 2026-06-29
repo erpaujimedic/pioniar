@@ -3,7 +3,7 @@ import routeros_api
 from dotenv import load_dotenv
 from contextlib import contextmanager
 
-load_dotenv()
+load_dotenv(override=True)
 
 import threading
 
@@ -18,15 +18,17 @@ class MikrotikService:
         self.password = os.getenv("MIKROTIK_PASSWORD", "")
         self.pool = None
         self.lock = threading.Lock()
+        
+        self._monitor_cache = None
+        self._monitor_cache_time = 0
 
     def _ensure_pool(self):
         """Memastikan koneksi pool tersedia dengan fitur fallback (Local -> Public)."""
         if not self.pool:
-            targets = [
-                (self.local_host, self.local_port),
-            ]
+            targets = []
             if self.public_host:
                 targets.append((self.public_host, self.public_port))
+            targets.append((self.local_host, self.local_port))
                 
             last_err = None
             for host, port in targets:
@@ -142,6 +144,11 @@ class MikrotikService:
             return False, str(e)
 
     def get_monitor_data(self):
+        import time
+        now = time.time()
+        if self._monitor_cache and (now - self._monitor_cache_time < 5):
+            return self._monitor_cache
+
         try:
             with self.get_api() as api:
                 # 1. Total Active Users & Latest Login
@@ -189,7 +196,8 @@ class MikrotikService:
                 except Exception as e:
                     print(f"[MikroTik Error] Gagal fetch traffic: {e}")
 
-                return {
+                
+                result = {
                     "active_users": active_count,
                     "latest_login": latest_login,
                     "uptime": uptime,
@@ -199,9 +207,12 @@ class MikrotikService:
                     "board_name": board_name,
                     "hdd_usage": hdd_usage
                 }
+                self._monitor_cache = result
+                self._monitor_cache_time = time.time()
+                return result
         except Exception as e:
             print(f"[MikroTik Error] get_monitor_data: {e}")
-            return None
+            return self._monitor_cache
 
     def reboot_router(self):
         try:

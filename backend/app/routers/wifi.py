@@ -58,7 +58,8 @@ def get_vouchers():
         
     from app.services.supabase_service import supabase_service
     try:
-        res = supabase_service.supabase.table('vouchers').select('code, is_printed, status, first_used_at, expires_at').execute()
+        # Optimasi: Abaikan Kadaluarsa untuk mengurangi load API
+        res = supabase_service.supabase.table('vouchers').select('code, is_printed, status, first_used_at, expires_at').neq('status', 'Kadaluarsa').execute()
         sb_vouchers = {row['code']: row for row in res.data}
     except:
         sb_vouchers = {}

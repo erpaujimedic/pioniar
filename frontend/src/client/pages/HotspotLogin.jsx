@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, Navigate, useNavigate } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Wifi, Lock } from 'lucide-react';
+
+/* ── brand palette ── */
+const SLATE  = '#4a6891';
+const SLATEL = '#607b9e';
+const MINT   = '#5aab87';
+const MINTL  = '#7bc4a0';
+const BG     = '#f5f8fc';
+const HEX = 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)';
 
 export default function HotspotLogin() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,14 +56,11 @@ export default function HotspotLogin() {
     
     const passValue = loginMode === 'voucher' ? username : password;
     
-    // Redirect to submit.html (hosted on Mikrotik) to perform native POST
     const dstUrl = encodeURIComponent('https://pioniar.com/portalinformation?status=success');
     
-    // Ambil alamat asli Hotspot dari URL, kalau gak ada baru pakai 192.168.100.1
     let loginUrl = searchParams.get('loginUrl');
     let target = loginUrl ? loginUrl.replace('/login', '/submit.html') : 'http://pioniar.wifi/submit.html';
     
-    // Pastikan kalau pakai HTTPS, ubah ke HTTP (karena hotspot lokal biasanya HTTP)
     if (target.startsWith('https://')) {
         target = target.replace('https://', 'http://');
     }
@@ -68,130 +73,128 @@ export default function HotspotLogin() {
   }
 
   return (
-    <div className="bg-hex-pattern" style={{ 
-      width: '100%', 
-      height: 'calc(100vh - 80px)', 
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
+    <div className="w-full min-h-[calc(100dvh-65px)] flex items-center justify-start md:justify-center flex-col p-4 overflow-y-auto hide-scrollbar relative max-md:pt-8 max-md:pb-24" style={{ background: BG }}>
       
-      {/* Watermark Background Logo */}
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', maxWidth: '800px', height: '100%', zIndex: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-         <img src="/logo-icon.png" alt="" style={{ height: '400px', width: 'auto', opacity: 0.03, transform: 'rotate(-15deg)', filter: 'grayscale(100%)' }} />
-      </div>
+      {/* subtle hex grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage:`url("data:image/svg+xml,%3Csvg width='70' height='121' viewBox='0 0 70 121' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M35 0l30.31 17.5v35L35 70 4.69 52.5v-35z' fill='none' stroke='%234a6891' stroke-width='0.8' stroke-opacity='0.08'/%3E%3C/svg%3E")`,
+        backgroundSize:'70px 121px'
+      }}/>
 
-      <div className="glass-panel animate-slide-up" style={{ 
-        width: '100%', 
-        maxWidth: '380px', 
-        padding: '2.5rem', 
-        borderRadius: '0.75rem', 
-        position: 'relative', 
-        zIndex: 1, 
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)'
-      }}>
+      {/* soft glows */}
+      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] pointer-events-none rounded-full" style={{ background:`radial-gradient(circle, ${MINTL}15 0%, transparent 70%)`, filter:'blur(40px)' }}/>
+      <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] pointer-events-none rounded-full" style={{ background:`radial-gradient(circle, ${SLATEL}12 0%, transparent 70%)`, filter:'blur(50px)' }}/>
+
+      <div className="animate-slide-up w-full max-w-[360px] p-6 md:p-8 rounded-3xl relative z-10 bg-white/95 shadow-[0_12px_40px_rgba(74,104,145,0.12)] border flex flex-col" style={{ borderColor: `${SLATE}15`, backdropFilter: 'blur(20px)' }}>
         
-        {/* Centered Wide Logo (Icon + Text) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', marginBottom: '2rem' }}>
-          <img src="/logo-icon.png" alt="Pioniar" style={{ height: '36px', width: 'auto', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} onError={(e) => e.target.style.display = 'none'} />
-          <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
-            PIONIAR <span style={{ background: 'linear-gradient(135deg, #2563eb, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NETWORK</span>
-          </span>
+        {/* Decorative top hex (Moved into normal flow to prevent cutoff) */}
+        <div className="mx-auto w-16 h-16 mb-4 flex items-center justify-center p-[3px] relative shrink-0" style={{ clipPath:HEX, background:`linear-gradient(135deg, ${SLATE}, ${MINT})`, filter:`drop-shadow(0 4px 10px ${MINT}30)` }}>
+           <div className="w-full h-full flex items-center justify-center bg-white" style={{ clipPath:HEX }}>
+              <Wifi size={24} style={{ color: MINT }} />
+           </div>
+        </div>
+
+        <div className="text-center mb-6">
+          <h2 className="font-black text-xl tracking-tight m-0" style={{ color: SLATE }}>
+            PIONIAR <span style={{ color: MINT }}>NETWORK</span>
+          </h2>
+          <p className="text-[10px] font-bold mt-1 uppercase tracking-widest" style={{ color: SLATEL }}>Portal Akses Internet</p>
         </div>
 
         {/* Error Alert */}
         {errorMsg && (
-          <div style={{ backgroundColor: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '0.75rem 1rem', marginBottom: '1.5rem', borderRadius: '0.375rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-            <AlertCircle color="#ef4444" size={18} style={{ marginTop: '0.1rem' }} />
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#b91c1c', fontWeight: 500 }}>{errorMsg}</p>
+          <div className="bg-red-50 border-l-4 border-red-500 py-3 px-4 mb-6 rounded-lg flex items-start gap-2 shadow-sm">
+            <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+            <p className="m-0 text-sm text-red-700 font-medium">{errorMsg}</p>
           </div>
         )}
 
         {/* Toggle Mode */}
-        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', borderRadius: '0.5rem', padding: '0.3rem', marginBottom: '1.5rem' }}>
+        <div className="flex rounded-xl p-1 mb-5" style={{ background: `${SLATE}0d`, border: `1px solid ${SLATE}15` }}>
           <button 
             type="button"
             onClick={() => setLoginMode('voucher')}
-            style={{ 
-              flex: 1, padding: '0.6rem', borderRadius: '0.375rem', fontSize: '0.85rem', fontWeight: 600, border: 'none', 
-              backgroundColor: loginMode === 'voucher' ? '#ffffff' : 'transparent', 
-              color: loginMode === 'voucher' ? '#2563eb' : '#64748b', 
-              boxShadow: loginMode === 'voucher' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', 
-              cursor: 'pointer', transition: 'all 0.2s' 
-            }}
+            className={`flex-1 py-2 px-2 rounded-lg text-[13px] font-bold transition-all duration-300 cursor-pointer ${
+              loginMode === 'voucher' ? 'bg-white shadow-sm' : 'bg-transparent'
+            }`}
+            style={{ color: loginMode === 'voucher' ? MINT : SLATEL }}
           >
             Voucher
           </button>
           <button 
             type="button"
             onClick={() => setLoginMode('member')}
-            style={{ 
-              flex: 1, padding: '0.6rem', borderRadius: '0.375rem', fontSize: '0.85rem', fontWeight: 600, border: 'none', 
-              backgroundColor: loginMode === 'member' ? '#ffffff' : 'transparent', 
-              color: loginMode === 'member' ? '#2563eb' : '#64748b', 
-              boxShadow: loginMode === 'member' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', 
-              cursor: 'pointer', transition: 'all 0.2s' 
-            }}
+            className={`flex-1 py-2 px-2 rounded-lg text-[13px] font-bold transition-all duration-300 cursor-pointer ${
+              loginMode === 'member' ? 'bg-white shadow-sm' : 'bg-transparent'
+            }`}
+            style={{ color: loginMode === 'member' ? MINT : SLATEL }}
           >
-            Member / Bulanan
+            Member
           </button>
         </div>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
           
           {loginMode === 'voucher' ? (
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.4rem', color: '#475569' }}>Kode Voucher <span style={{color: '#ef4444'}}>*</span></label>
+              <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide" style={{ color: SLATEL }}>Kode Voucher</label>
               <input 
                 type="text" 
-                className="input-base" 
                 placeholder="Contoh: PION-1234" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                style={{ padding: '0.7rem 0.8rem', fontSize: '0.95rem', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '0.375rem', width: '100%', textAlign: 'center', letterSpacing: '1px', fontWeight: 600 }} 
+                className="w-full py-2.5 px-3 text-sm bg-white border rounded-xl text-center tracking-widest font-bold focus:outline-none transition-all placeholder:font-normal"
+                style={{ borderColor: `${SLATE}20`, color: SLATE }}
+                onFocus={(e) => { e.target.style.borderColor = MINT; e.target.style.boxShadow = `0 0 0 3px ${MINT}20`; }}
+                onBlur={(e) => { e.target.style.borderColor = `${SLATE}20`; e.target.style.boxShadow = 'none'; }}
               />
             </div>
           ) : (
             <>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.4rem', color: '#475569' }}>Username <span style={{color: '#ef4444'}}>*</span></label>
+                <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide" style={{ color: SLATEL }}>Username</label>
                 <input 
                   type="text" 
-                  className="input-base" 
                   placeholder="Masukkan username" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  style={{ padding: '0.6rem 0.8rem', fontSize: '0.9rem', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '0.375rem', width: '100%' }} 
+                  className="w-full py-2.5 px-3 text-sm bg-white border rounded-xl font-semibold focus:outline-none transition-all"
+                  style={{ borderColor: `${SLATE}20`, color: SLATE }}
+                  onFocus={(e) => { e.target.style.borderColor = MINT; e.target.style.boxShadow = `0 0 0 3px ${MINT}20`; }}
+                  onBlur={(e) => { e.target.style.borderColor = `${SLATE}20`; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.4rem', color: '#475569' }}>Password <span style={{color: '#ef4444'}}>*</span></label>
+                <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide" style={{ color: SLATEL }}>Password</label>
                 <input 
                   type="password" 
-                  className="input-base" 
                   placeholder="Masukkan password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  style={{ padding: '0.6rem 0.8rem', fontSize: '0.9rem', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '0.375rem', width: '100%' }} 
+                  className="w-full py-2.5 px-3 text-sm bg-white border rounded-xl font-semibold focus:outline-none transition-all"
+                  style={{ borderColor: `${SLATE}20`, color: SLATE }}
+                  onFocus={(e) => { e.target.style.borderColor = MINT; e.target.style.boxShadow = `0 0 0 3px ${MINT}20`; }}
+                  onBlur={(e) => { e.target.style.borderColor = `${SLATE}20`; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
             </>
           )}
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem', fontWeight: 600, marginTop: '0.5rem', borderRadius: '0.375rem', backgroundColor: '#1e40af', border: 'none' }}>
+          <button type="submit" className="w-full py-3 text-sm font-bold mt-1 rounded-xl text-white transition-all cursor-pointer border-none flex items-center justify-center gap-2 hover:-translate-y-0.5 group"
+            style={{ background: `linear-gradient(135deg, ${MINT}, ${SLATE})`, boxShadow: `0 6px 16px ${MINT}30` }}>
+            <Lock size={16} className="group-hover:scale-110 transition-transform" />
             Mulai Internetan
           </button>
         </form>
 
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <Link to="/portal/buy" style={{ fontSize: '0.8rem', color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>
+        <div className="mt-6 text-center">
+          <Link to="/portal/buy" className="text-[13px] no-underline font-bold transition-colors inline-block"
+             style={{ color: SLATEL }}
+             onMouseEnter={(e) => e.target.style.color = MINT}
+             onMouseLeave={(e) => e.target.style.color = SLATEL}>
             Belum punya voucher? Beli Online
           </Link>
         </div>

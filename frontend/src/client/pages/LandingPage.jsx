@@ -1,175 +1,267 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Lock, Wifi, Hexagon, Coffee, Activity, Users, Zap, Clock, UserCheck, CheckCircle2 } from 'lucide-react';
+import { Lock, Coffee, Hexagon as HexIcon, Users, Zap, Clock, UserCheck, CheckCircle2, ArrowRight, Wifi, Globe } from 'lucide-react';
+
+function useCountUp(target, dur = 900) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!target) { setV(0); return; }
+    let s = null;
+    const tick = (ts) => { if (!s) s = ts; const p = Math.min((ts - s) / dur, 1); setV(Math.floor(p * target)); if (p < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  }, [target]);
+  return v;
+}
+
+const HEX = 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)';
+
+/* ── brand palette ── */
+const SLATE  = '#4a6891';
+const SLATEL = '#607b9e';
+const MINT   = '#5aab87';
+const MINTL  = '#7bc4a0';
+const BG     = '#f5f8fc';
 
 export default function LandingPage() {
   const [searchParams] = useSearchParams();
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [monitorData, setMonitorData] = useState({
-    active_users: 0,
-    speed_mbps: 0.0,
-    uptime: "00:00:00",
-    latest_login: "Belum ada"
-  });
+  const [ok, setOk]   = useState(false);
+  const [vis, setVis] = useState(false);
+  const [d, setD]     = useState({ active_users:0, speed_mbps:0, uptime:'00:00:00', latest_login:'Belum ada' });
+  const users = useCountUp(d.active_users);
 
+  useEffect(() => { const t = setTimeout(() => setVis(true), 80); return () => clearTimeout(t); }, []);
+  useEffect(() => { if (searchParams.get('status') === 'success') { setOk(true); setTimeout(() => setOk(false), 8000); } }, [searchParams]);
   useEffect(() => {
-    if (searchParams.get('status') === 'success') {
-      setShowSuccess(true);
-      // Auto hide setelah 10 detik
-      setTimeout(() => setShowSuccess(false), 10000);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const fetchMonitorData = async () => {
-      try {
-        const response = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/wifi/monitor');
-        const result = await response.json();
-        if (result.status === 'Success' && result.data) {
-          setMonitorData(result.data);
-        }
-      } catch (error) {
-        console.error("Gagal nyedot data monitor MikroTik:", error);
-      }
-    };
-
-    // Panggil sekali pas halaman baru dibuka
-    fetchMonitorData();
-    // Set timer otomatis (polling) tiap 5 detik
-    const interval = setInterval(fetchMonitorData, 5000);
-    
-    return () => clearInterval(interval);
+    const run = async () => { try { const r = await fetch((import.meta.env.VITE_API_BASE_URL||'')+'/api/wifi/monitor'); const j = await r.json(); if (j.status==='Success'&&j.data) setD(j.data); } catch {} };
+    run(); const id=setInterval(run,5000); return ()=>clearInterval(id);
   }, []);
 
+  const anim = (delay=0) => ({
+    opacity: vis?1:0,
+    transform: vis?'translateY(0)':'translateY(16px)',
+    transition: `opacity .55s ease ${delay}s, transform .55s ease ${delay}s`,
+  });
+
   return (
-    <div className="animate-fade-in bg-hex-pattern landing-page-container" style={{ 
-      width: '100%', 
-      minHeight: 'calc(100vh - 65px)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '4rem 2rem 2rem 2rem',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      
-      {/* Success Notification Banner */}
-      {showSuccess && (
-        <div className="animate-slide-up" style={{
-          position: 'absolute', top: '1.5rem', left: '50%', transform: 'translateX(-50%)',
-          backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '0.5rem',
-          padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem',
-          boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.2)', zIndex: 50, width: '90%', maxWidth: '500px'
-        }}>
-          <CheckCircle2 color="#10b981" size={24} />
-          <div>
-            <h4 style={{ margin: 0, color: '#065f46', fontSize: '1rem', fontWeight: 700 }}>Akses Internet Terbuka!</h4>
-            <p style={{ margin: 0, color: '#047857', fontSize: '0.85rem', marginTop: '0.2rem' }}>Selamat berselancar di Pioniar Network.</p>
-          </div>
+    <div className="relative w-full h-full overflow-hidden" style={{ background:BG }}>
+
+      {/* subtle hex grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage:`url("data:image/svg+xml,%3Csvg width='70' height='121' viewBox='0 0 70 121' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M35 0l30.31 17.5v35L35 70 4.69 52.5v-35z' fill='none' stroke='%234a6891' stroke-width='0.8' stroke-opacity='0.08'/%3E%3C/svg%3E")`,
+        backgroundSize:'70px 121px'
+      }}/>
+
+      {/* top-left mint glow */}
+      <div className="absolute -top-20 -left-20 w-[450px] h-[350px] pointer-events-none rounded-full" style={{ background:`radial-gradient(circle, ${MINTL}22 0%, transparent 70%)`, filter:'blur(50px)' }}/>
+      {/* bottom-right slate glow */}
+      <div className="absolute -bottom-20 -right-20 w-[400px] h-[300px] pointer-events-none rounded-full" style={{ background:`radial-gradient(circle, ${SLATEL}18 0%, transparent 70%)`, filter:'blur(60px)' }}/>
+
+      {/* success toast */}
+      {ok && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border bg-white">
+          <CheckCircle2 size={18} style={{ color:MINT }}/>
+          <p className="m-0 text-sm font-bold" style={{ color:SLATE }}>Akses Internet Terbuka! Selamat berselancar.</p>
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="animate-slide-up landing-title" style={{ textAlign: 'center', marginTop: '1rem' }}>
-        <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', color: '#0f172a', lineHeight: 1.1, margin: 0, letterSpacing: '-0.02em', fontWeight: 800 }}>
-          Satu Ekosistem untuk <br/>
-          <span style={{ 
-            background: 'linear-gradient(135deg, #2563eb, #60a5fa)', 
-            WebkitBackgroundClip: 'text', 
-            WebkitTextFillColor: 'transparent' 
-          }}>
-            Segala Kemungkinan
-          </span>
-        </h1>
-      </div>
+      {/* ════ BODY ════ */}
+      <div className="relative z-10 h-full flex flex-col">
 
-      {/* Center Interactive Hexagons */}
-      <div className="hex-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4rem', flexWrap: 'wrap', margin: '3rem 0' }}>
-        
-        {/* Farm (Subtle) */}
-        <div className="animate-slide-up delay-200" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', opacity: 0.6, transition: 'opacity 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}>
-          <div className="hex-shape elegant-glass" style={{ width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <Hexagon size={32} color="#64748b" />
-          </div>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>FARM (SOON)</span>
-        </div>
+        {/* HERO 2-col */}
+        <div className="flex-1 flex flex-col md:flex-row items-center md:items-center justify-start md:justify-center min-h-0 px-4 md:px-12 gap-8 md:gap-8 pt-8 pb-12 md:pt-0 md:pb-0 overflow-y-auto hide-scrollbar w-full">
 
-        {/* Main Wifi Portal (Glowing) */}
-        <Link to="/portal" className="animate-slide-up delay-100" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', position: 'relative' }}>
-          {/* Outer Glow Effect */}
-          <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', width: '160px', height: '160px', background: '#3b82f6', filter: 'blur(40px)', opacity: 0.5, zIndex: 0, animation: 'pulse 3s infinite' }}></div>
-          
-          <div style={{ position: 'relative', zIndex: 1, width: '160px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-            {/* Outer Hexagon (Border Gradient) */}
-            <div className="hex-shape" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #93c5fd, #1d4ed8)', padding: '4px' }}>
-              {/* Inner Hexagon (Solid Gradient + Shadow) */}
-              <div className="hex-shape" style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1e3a8a, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 30px rgba(255,255,255,0.3)' }}>
-                <Lock size={64} color="#ffffff" strokeWidth={1.5} />
+          {/* ── LEFT ── */}
+          <div className="flex-1 max-w-[480px]" style={anim(0)}>
+
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-4 text-[10px] font-black tracking-[0.22em] uppercase border"
+              style={{ background:`${MINT}18`, borderColor:`${MINT}50`, color: MINT }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-ping inline-block" style={{ backgroundColor:MINT }}/>
+              Pioniar Ecosystem
+            </div>
+
+            <h1 className="m-0 font-black leading-[1.14] tracking-tight" style={{ fontSize:'clamp(2rem,3.2vw,2.9rem)', color: SLATE }}>
+              Satu Ekosistem<br/>
+              untuk{' '}
+              <span style={{ background:`linear-gradient(90deg,${MINT},${MINTL})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
+                Segala Kemungkinan
+              </span>
+            </h1>
+
+            <p className="mt-3 text-sm leading-relaxed m-0" style={{ color:`${SLATE}bb` }}>
+              Akses WiFi, kelola jaringan, dan nikmati layanan digital terintegrasi dalam satu platform cerdas.
+            </p>
+
+            {/* quick stats */}
+            <div className="mt-4 flex items-center gap-5 flex-wrap">
+              {[
+                { icon:<Users size={12}/>, val:`${users}`, lbl:'user aktif' },
+                { icon:<Zap size={12}/>, val:`${d.speed_mbps} Mbps`, lbl:'avg speed' },
+                { icon:<Clock size={12}/>, val:d.uptime, lbl:'uptime' },
+              ].map((s,i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color:SLATEL }}>
+                  <span style={{ color:MINT }}>{s.icon}</span>
+                  <span className="font-black" style={{ color:SLATE }}>{s.val}</span>
+                  <span style={{ color:`${SLATE}70` }}>{s.lbl}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-5 flex items-center gap-3">
+              <Link to="/portal"
+                className="no-underline inline-flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-xl text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group"
+                style={{ background:`linear-gradient(135deg,${MINT},${SLATE})`, boxShadow:`0 6px 20px ${MINT}40` }}>
+                <Wifi size={16}/>
+                Buka Portal WiFi
+                <ArrowRight size={14} className="transition-transform group-hover:translate-x-1"/>
+              </Link>
+              <span className="text-xs font-medium" style={{ color:`${SLATE}65` }}>Login / beli voucher</span>
+            </div>
+
+            {/* Ecosystem pills */}
+            <div className="mt-4 flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border"
+                style={{ background:`${MINT}15`, borderColor:`${MINT}50`, color:MINT }}>
+                <div className="w-4 h-4 flex items-center justify-center" style={{ clipPath:HEX, background:`linear-gradient(135deg,${MINT},${SLATE})` }}>
+                  <Wifi size={8} color="#fff"/>
+                </div>
+                WiFi <span className="w-1.5 h-1.5 rounded-full animate-pulse ml-0.5" style={{ backgroundColor:MINT }}/>
               </div>
+              {[{l:'Farm',i:<HexIcon size={8}/>},{l:'Snack',i:<Coffee size={8}/>}].map(c=>(
+                <div key={c.l} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border opacity-50 cursor-not-allowed select-none"
+                  style={{ borderColor:`${SLATE}25`, color:SLATEL }}>
+                  <div className="w-4 h-4 flex items-center justify-center" style={{ clipPath:HEX, background:`${SLATE}20` }}>{c.i}</div>
+                  {c.l} <span className="text-[8px] px-1 rounded font-black" style={{ background:`${SLATE}12`, color:`${SLATE}80` }}>SOON</span>
+                </div>
+              ))}
             </div>
           </div>
-          
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>Buka Portal WiFi</div>
-            <div style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 700, marginTop: '0.4rem', letterSpacing: '0.05em' }}>PIONIAR NETWORK</div>
-          </div>
-        </Link>
 
-        {/* Snack (Subtle) */}
-        <div className="animate-slide-up delay-300" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', opacity: 0.6, transition: 'opacity 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}>
-          <div className="hex-shape elegant-glass" style={{ width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <Coffee size={32} color="#64748b" />
+          {/* ── RIGHT: Honeycomb cluster ── */}
+          <div className="flex-1 flex items-center justify-center relative w-full transform scale-75 md:scale-100 mt-4 md:mt-0" style={anim(0.1)}>
+
+            {/*
+              Honeycomb grid — 3-hex row top, then main hex center, then 3-hex row bottom
+              We position each using absolute + transform
+            */}
+            <div className="relative" style={{ width:340, height:340 }}>
+
+              {/* === MAIN HEX (center) — WiFi portal === */}
+              <div className="absolute" style={{ top:'50%', left:'50%', transform:'translate(-50%,-50%)' }}>
+                <Link to="/portal" className="no-underline group block">
+                  {/* ping ring */}
+                  <div className="absolute inset-0 animate-ping opacity-[0.08]"
+                    style={{ clipPath:HEX, background:`linear-gradient(135deg,${MINT},${SLATE})`, animationDuration:'2.8s', borderRadius:0 }}/>
+                  {/* glow */}
+                  <div className="absolute -inset-6 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-full"
+                    style={{ background:`radial-gradient(circle,${MINT}30,transparent 65%)`, filter:'blur(16px)' }}/>
+
+                  <div className="relative w-36 h-36 transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-1"
+                    style={{ clipPath:HEX, filter:`drop-shadow(0 12px 32px ${MINT}40)` }}>
+                    <div className="absolute inset-0 p-[3.5px]" style={{ clipPath:HEX, background:`linear-gradient(145deg,${SLATE},${MINT},${MINTL})` }}>
+                      <div className="w-full h-full flex items-center justify-center relative"
+                        style={{ clipPath:HEX, background:`linear-gradient(145deg,#ffffff,#edf5f1)` }}>
+                        <div className="absolute inset-0" style={{ clipPath:HEX, background:`radial-gradient(circle at 40% 35%,${MINT}20,transparent 55%)` }}/>
+                        <Lock size={52} strokeWidth={1.3} className="relative z-10 transition-all duration-500 group-hover:scale-110"
+                          style={{ color:SLATE, filter:`drop-shadow(0 4px 10px ${MINT}60)` }}/>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center mt-2">
+                    <div className="text-sm font-black" style={{ color:SLATE }}>WiFi Portal</div>
+                    <div className="text-[10px] font-black tracking-[0.25em] uppercase" style={{ color:MINT }}>Aktif</div>
+                  </div>
+                </Link>
+              </div>
+
+              {/* === SURROUNDING mini hexes (honeycomb positions) === */}
+              {/* Top-left */}
+              <div className="absolute" style={{ top:'14%', left:'10%' }}>
+                <div className="w-[78px] h-[78px] flex items-center justify-center relative group cursor-default select-none"
+                  style={{ clipPath:HEX, background:'white', boxShadow:`0 4px 16px ${SLATE}15` }}>
+                  <div className="absolute inset-0" style={{ clipPath:HEX, border:`2px solid ${SLATE}15` }}/>
+                  <div className="flex flex-col items-center gap-1">
+                    <Users size={18} style={{ color:SLATEL }}/>
+                    <span className="text-sm font-black leading-none" style={{ color:SLATE }}>{users}</span>
+                    <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color:`${SLATE}70` }}>Users</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top-right */}
+              <div className="absolute" style={{ top:'14%', right:'10%' }}>
+                <div className="w-[78px] h-[78px] flex items-center justify-center"
+                  style={{ clipPath:HEX, background:'white', boxShadow:`0 4px 16px ${SLATE}15` }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <Zap size={18} style={{ color:MINT }}/>
+                    <span className="text-sm font-black leading-none" style={{ color:MINT }}>{d.speed_mbps}</span>
+                    <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color:`${MINT}99` }}>Mbps</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Left */}
+              <div className="absolute" style={{ top:'50%', left:'0%', transform:'translateY(-50%)' }}>
+                <div className="w-[70px] h-[70px] flex items-center justify-center opacity-40 cursor-not-allowed select-none"
+                  style={{ clipPath:HEX, background:'white', boxShadow:`0 2px 10px ${SLATE}10` }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <HexIcon size={16} style={{ color:SLATEL }}/>
+                    <span className="text-[8px] font-black uppercase" style={{ color:SLATEL }}>Farm</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right */}
+              <div className="absolute" style={{ top:'50%', right:'0%', transform:'translateY(-50%)' }}>
+                <div className="w-[70px] h-[70px] flex items-center justify-center opacity-40 cursor-not-allowed select-none"
+                  style={{ clipPath:HEX, background:'white', boxShadow:`0 2px 10px ${SLATE}10` }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <Coffee size={16} style={{ color:SLATEL }}/>
+                    <span className="text-[8px] font-black uppercase" style={{ color:SLATEL }}>Snack</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom-left */}
+              <div className="absolute" style={{ bottom:'14%', left:'10%' }}>
+                <div className="w-[78px] h-[78px] flex items-center justify-center"
+                  style={{ clipPath:HEX, background:'white', boxShadow:`0 4px 16px ${SLATE}15` }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <Clock size={18} style={{ color:MINTL }}/>
+                    <span className="text-[10px] font-black leading-none font-mono" style={{ color:MINTL }}>{d.uptime.slice(0,5)}</span>
+                    <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color:`${MINTL}aa` }}>Uptime</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom-right */}
+              <div className="absolute" style={{ bottom:'14%', right:'10%' }}>
+                <div className="w-[78px] h-[78px] flex items-center justify-center"
+                  style={{ clipPath:HEX, background:'white', boxShadow:`0 4px 16px ${SLATE}15` }}>
+                  <div className="flex flex-col items-center gap-1">
+                    <UserCheck size={18} style={{ color:SLATEL }}/>
+                    <span className="text-[9px] font-bold leading-none truncate max-w-[54px] text-center" style={{ color:SLATE }}>{d.latest_login}</span>
+                    <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color:`${SLATE}70` }}>Login</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connecting lines (SVG overlay) */}
+              <svg className="absolute inset-0 pointer-events-none" width="340" height="340" style={{ opacity:.18 }}>
+                <line x1="170" y1="170" x2="83" y2="95"  stroke={SLATE} strokeWidth="1.5" strokeDasharray="4 3"/>
+                <line x1="170" y1="170" x2="257" y2="95"  stroke={MINT}  strokeWidth="1.5" strokeDasharray="4 3"/>
+                <line x1="170" y1="170" x2="34"  y2="170" stroke={SLATE} strokeWidth="1.5" strokeDasharray="4 3"/>
+                <line x1="170" y1="170" x2="306" y2="170" stroke={SLATE} strokeWidth="1.5" strokeDasharray="4 3"/>
+                <line x1="170" y1="170" x2="83"  y2="248" stroke={MINT}  strokeWidth="1.5" strokeDasharray="4 3"/>
+                <line x1="170" y1="170" x2="257" y2="248" stroke={SLATE} strokeWidth="1.5" strokeDasharray="4 3"/>
+              </svg>
+
+            </div>
           </div>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>SNACK (SOON)</span>
         </div>
 
       </div>
-
-      {/* Bottom Live Monitor Strip */}
-      <div className="elegant-glass animate-slide-up delay-400 monitor-strip" style={{ width: '100%', maxWidth: '1000px', borderRadius: '1rem', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem', marginTop: 'auto' }}>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#10b981', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em' }}>
-          <Activity size={20} className="animate-pulse" /> LIVE MONITOR
-        </div>
-
-        <div className="monitor-stats" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', flex: 1, justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-             <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '50%' }}><Users size={18} color="#64748b" /></div>
-             <div>
-               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{monitorData.active_users}</div>
-               <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', marginTop: '0.2rem' }}>USER AKTIF</div>
-             </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-             <div style={{ background: '#eff6ff', padding: '0.5rem', borderRadius: '50%' }}><Zap size={18} color="#2563eb" /></div>
-             <div>
-               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb', lineHeight: 1 }}>{monitorData.speed_mbps} <span style={{fontSize:'0.8rem'}}>Mbps</span></div>
-               <div style={{ fontSize: '0.65rem', color: '#2563eb', fontWeight: 700, letterSpacing: '0.05em', marginTop: '0.2rem' }}>AVG SPEED</div>
-             </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-             <div style={{ background: '#ecfdf5', padding: '0.5rem', borderRadius: '50%' }}><Clock size={18} color="#10b981" /></div>
-             <div>
-               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#10b981', lineHeight: 1 }}>{monitorData.uptime}</div>
-               <div style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700, letterSpacing: '0.05em', marginTop: '0.2rem' }}>UPTIME</div>
-             </div>
-          </div>
-        </div>
-
-        {/* Minimal Recent Activity log */}
-        <div className="recent-activity" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: '1px solid rgba(0,0,0,0.1)', paddingLeft: '1.5rem' }}>
-           <div style={{ background: '#dcfce7', padding: '0.5rem', borderRadius: '50%' }}><UserCheck size={16} color="#166534" /></div>
-           <div>
-             <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>{monitorData.latest_login}</div>
-             <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 500, marginTop: '0.2rem' }}>Baru saja terhubung</div>
-           </div>
-        </div>
-
-      </div>
-
     </div>
   );
 }

@@ -1,123 +1,95 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Link, NavLink, useLocation } from 'react-router-dom';
 import LiveChatWidget from './components/LiveChatWidget';
-import { ArrowLeft } from 'lucide-react';
+import { Home, Wifi, User } from 'lucide-react';
 
 export default function ClientLayout() {
   const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     document.body.classList.remove('admin-mode');
   }, []);
 
+  const SLATE = '#607b9e';
+  const MINT  = '#7bc4a0';
+
   return (
-    <div className="client-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff', color: '#0f172a' }}>
-      
-      {/* Sleek Header - STICKY */}
-      <header style={{ 
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(0,0,0,0.05)',
-        width: '100%'
-      }}>
-        <div className="client-header-container" style={{
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          padding: '0.75rem 2rem',
-          maxWidth: '1200px',
-          margin: '0 auto',
-          width: '100%'
-        }}>
-          {/* Logo Area (Secret Admin Portal) */}
-          <Link to="/admin" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }} title="Pioniar Ecosystem">
-            <img src="/logo-text.png" alt="PIONIAR" style={{ height: '40px', width: 'auto' }} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
-            <span style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.05em', color: '#0f172a', display: 'none' }}>PIONIAR</span>
+    <div className="h-screen overflow-hidden flex flex-col max-md:pb-[65px]" style={{ background:'#f7f9fb' }}>
+
+      {/* ── Top Header ── */}
+      <header className="shrink-0 w-full border-b relative z-50" style={{ background:'rgba(255,255,255,0.85)', backdropFilter:'blur(16px)', borderColor:`${SLATE}18` }}>
+        <div className="max-w-6xl mx-auto w-full px-4 md:px-6 h-[56px] md:h-[58px] flex items-center justify-between">
+
+          {/* Logo (Centered on mobile, left on desktop) */}
+          <Link to="/admin" className="flex items-center gap-2 no-underline shrink-0 group mx-auto md:mx-0" title="Pioniar Admin">
+            <img
+              src="/logo-icon.png"
+              alt="PIONIAR"
+              className="h-8 md:h-9 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity"
+              onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+            />
+            <span className="flex items-center font-black text-xl tracking-tight" style={{ color: SLATE }}>PIONIAR</span>
           </Link>
 
-          {/* Pill-shaped Nav Links */}
-          <nav className="client-nav" style={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            backgroundColor: 'rgba(241, 245, 249, 0.6)', 
-            padding: '0.25rem', 
-            borderRadius: '2rem',
-            fontWeight: 500, 
-            fontSize: '0.9rem',
-            border: '1px solid rgba(0,0,0,0.02)'
-          }}>
-            <NavLink to="/" end style={({ isActive }) => ({ 
-              textDecoration: 'none', 
-              color: isActive ? '#0f172a' : '#64748b', 
-              backgroundColor: isActive ? '#ffffff' : 'transparent',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '1.5rem',
-              boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.2s'
-            })}>Beranda</NavLink>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-1.5 rounded-full p-1" style={{ background:`${SLATE}10`, border:`1px solid ${SLATE}18` }}>
+            <NavLink to="/" end className={({ isActive }) => [
+              'no-underline px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200',
+              isActive ? 'bg-white shadow-sm' : 'hover:bg-white/60',
+            ].join(' ')} style={({ isActive }) => ({ color: isActive ? SLATE : `${SLATE}80` })}>
+              Beranda
+            </NavLink>
 
-            {location.pathname === '/portal/buy' ? (
-              <NavLink to="/portal" style={({ isActive }) => ({ 
-                textDecoration: 'none', 
-                color: '#2563eb',
-                backgroundColor: 'transparent',
-                padding: '0.5rem 1.25rem',
-                borderRadius: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                transition: 'all 0.2s'
-              })}><ArrowLeft size={16} /> Kembali ke Login</NavLink>
-            ) : location.pathname === '/portal' ? (
-              <NavLink to="/" style={({ isActive }) => ({ 
-                textDecoration: 'none', 
-                color: '#2563eb',
-                backgroundColor: 'transparent',
-                padding: '0.5rem 1.25rem',
-                borderRadius: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                transition: 'all 0.2s'
-              })}><ArrowLeft size={16} /> Kembali ke Beranda</NavLink>
-            ) : (
-              <NavLink to="/portal" style={({ isActive }) => ({ 
-                textDecoration: 'none', 
-                color: isActive ? '#0f172a' : '#64748b',
-                backgroundColor: isActive ? '#ffffff' : 'transparent',
-                padding: '0.5rem 1.25rem',
-                borderRadius: '1.5rem',
-                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.2s'
-              })}>Portal Wifi</NavLink>
-            )}
-            <NavLink to="/about-me" style={({ isActive }) => ({ 
-              textDecoration: 'none', 
-              color: isActive ? '#0f172a' : '#64748b',
-              backgroundColor: isActive ? '#ffffff' : 'transparent',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '1.5rem',
-              boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.2s'
-            })}>About Me</NavLink>
+            <NavLink to="/portal" className={({ isActive }) => [
+              'no-underline px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200',
+              isActive ? 'bg-white shadow-sm' : 'hover:bg-white/60',
+            ].join(' ')} style={({ isActive }) => ({ color: isActive ? SLATE : `${SLATE}80` })}>
+              Portal Wifi
+            </NavLink>
+
+            <NavLink to="/about-me" className={({ isActive }) => [
+              'no-underline px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200',
+              isActive ? 'bg-white shadow-sm' : 'hover:bg-white/60',
+            ].join(' ')} style={({ isActive }) => ({ color: isActive ? SLATE : `${SLATE}80` })}>
+              About Me
+            </NavLink>
           </nav>
+
+          {/* Network status */}
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border shrink-0"
+            style={{ background:`${MINT}18`, borderColor:`${MINT}40`, color:'#5aab87' }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: MINT }}/>
+            Network Online
+          </div>
         </div>
       </header>
 
-      <main style={{ flex: 1 }}>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <Outlet />
       </main>
 
-      {/* Simple Footer */}
-      <footer style={{ padding: '2rem', textAlign: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', color: '#94a3b8', fontSize: '0.875rem' }}>
-        &copy; {new Date().getFullYear()} Pioniar Ecosystem. Dikelola oleh sistem cerdas.
+      <footer className="shrink-0 py-3 text-center border-t text-xs font-medium hidden md:block" style={{ borderColor:`${SLATE}14`, color:`${SLATE}70`, background:'rgba(255,255,255,0.5)' }}>
+        © {new Date().getFullYear()} Pioniar Ecosystem. Dikelola oleh{' '}
+        <span className="font-bold" style={{ color: SLATE }}>Eep Ridwan Pauji</span>
       </footer>
-      
-      {/* Floating Chat Widget */}
+
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t z-[60] flex items-center justify-around pb-2 pt-2 px-2 shadow-[0_-8px_30px_rgba(74,104,145,0.08)]" style={{ borderColor:`${SLATE}15`, paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}>
+        <NavLink to="/" end className={({ isActive }) => `flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-xl transition-all duration-200 ${isActive ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
+          <Home size={22} className={location.pathname === '/' ? 'stroke-[2.5px]' : 'stroke-2'} />
+          <span className="text-[10px] font-bold">Beranda</span>
+        </NavLink>
+        <NavLink to="/portal" className={({ isActive }) => `flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-xl transition-all duration-200 ${isActive ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
+          <Wifi size={22} className={location.pathname === '/portal' ? 'stroke-[2.5px]' : 'stroke-2'} />
+          <span className="text-[10px] font-bold">Portal Wifi</span>
+        </NavLink>
+        <NavLink to="/about-me" className={({ isActive }) => `flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-xl transition-all duration-200 ${isActive ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
+          <User size={22} className={location.pathname === '/about-me' ? 'stroke-[2.5px]' : 'stroke-2'} />
+          <span className="text-[10px] font-bold">Profil</span>
+        </NavLink>
+      </nav>
+
       <LiveChatWidget />
     </div>
   );

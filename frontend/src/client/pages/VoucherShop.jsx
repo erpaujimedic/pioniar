@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Wallet } from 'lucide-react';
+import { ArrowLeft, Wallet, Wifi } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+/* ── brand palette ── */
+const SLATE  = '#4a6891';
+const SLATEL = '#607b9e';
+const MINT   = '#5aab87';
+const MINTL  = '#7bc4a0';
+const BG     = '#f5f8fc';
+const HEX = 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)';
 
 export default function VoucherShop() {
   const [plans, setPlans] = useState([]);
@@ -88,81 +96,97 @@ export default function VoucherShop() {
   };
 
   return (
-    <div className="bg-hex-pattern" style={{ 
-      width: '100%', 
-      minHeight: 'calc(100vh - 80px)', 
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '3rem 1rem',
-      position: 'relative'
-    }}>
+    <div className="w-full min-h-[calc(100vh-80px)] flex items-center justify-center py-12 px-4 relative overflow-hidden max-md:py-8" style={{ background: BG }}>
       
-      {/* Watermark Background Logo */}
-      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', maxWidth: '800px', height: '100%', zIndex: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-         <img src="/logo-icon.png" alt="" style={{ height: '400px', width: 'auto', opacity: 0.03, transform: 'rotate(-15deg)', filter: 'grayscale(100%)' }} />
-      </div>
+      {/* subtle hex grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage:`url("data:image/svg+xml,%3Csvg width='70' height='121' viewBox='0 0 70 121' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M35 0l30.31 17.5v35L35 70 4.69 52.5v-35z' fill='none' stroke='%234a6891' stroke-width='0.8' stroke-opacity='0.08'/%3E%3C/svg%3E")`,
+        backgroundSize:'70px 121px'
+      }}/>
 
-      <div className="glass-panel animate-slide-up" style={{ 
-        width: '100%', 
-        maxWidth: '440px', 
-        padding: '2.5rem', 
-        borderRadius: '1rem', 
-        position: 'relative', 
-        zIndex: 1, 
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)'
-      }}>
+      {/* soft glows */}
+      <div className="absolute top-10 left-10 w-[300px] h-[300px] pointer-events-none rounded-full" style={{ background:`radial-gradient(circle, ${MINTL}12 0%, transparent 70%)`, filter:'blur(40px)' }}/>
+      <div className="absolute bottom-10 right-10 w-[300px] h-[300px] pointer-events-none rounded-full" style={{ background:`radial-gradient(circle, ${SLATEL}10 0%, transparent 70%)`, filter:'blur(40px)' }}/>
+
+      <div className="animate-slide-up w-full max-w-[360px] p-6 md:p-8 rounded-3xl relative z-10 bg-white/95 shadow-[0_12px_40px_rgba(74,104,145,0.12)] border flex flex-col" style={{ borderColor: `${SLATE}15`, backdropFilter: 'blur(20px)' }}>
         
-        <div style={{ marginBottom: '2rem', textAlign: 'left' }}>
-          <h2 style={{ fontSize: '1.35rem', marginBottom: '0.25rem', color: '#0f172a', fontWeight: 800 }}>Beli Voucher Pioniar</h2>
-          <p style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 500 }}>Pilih paket internet sesuai kebutuhanmu.</p>
+        <div className="text-center mb-6">
+          <div className="mx-auto w-12 h-12 mb-3 flex items-center justify-center p-[2px]" style={{ clipPath:HEX, background:`linear-gradient(135deg, ${SLATE}, ${MINT})`, filter:`drop-shadow(0 4px 8px ${MINT}30)` }}>
+             <div className="w-full h-full flex items-center justify-center bg-white" style={{ clipPath:HEX }}>
+                <Wallet size={20} style={{ color: MINT }} />
+             </div>
+          </div>
+          <h2 className="text-[1.35rem] mb-1 font-black tracking-tight" style={{ color: SLATE }}>Beli Voucher <span style={{ color: MINT }}>Pioniar</span></h2>
+          <p className="text-[11px] font-bold m-0 uppercase tracking-widest" style={{ color: SLATEL }}>Pilih Paket Internet</p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="flex flex-col gap-3">
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+            <div className="text-center p-8 font-bold text-sm" style={{ color: SLATEL }}>
               Memuat daftar paket...
             </div>
           ) : plans.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '0.5rem' }}>
+            <div className="text-center p-8 rounded-xl font-bold text-sm border" style={{ background: `${SLATE}05`, borderColor: `${SLATE}15`, color: SLATEL }}>
               Belum ada paket tersedia.
             </div>
           ) : (
             plans.map(plan => {
               const isSelected = selectedPlanId === plan.id;
               return (
-              <div key={plan.id} onClick={() => handleSelect(plan.id)} style={{ 
-                padding: '1.25rem 1.5rem', 
-                borderRadius: '0.75rem', 
-                border: isSelected ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                position: 'relative',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
-                boxShadow: isSelected ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none',
-                transform: isSelected ? 'translateY(-2px)' : 'none'
-              }}>
+              <div 
+                key={plan.id} 
+                onClick={() => handleSelect(plan.id)} 
+                className={`p-4 rounded-2xl border-2 relative cursor-pointer transition-all duration-300 group ${
+                  isSelected ? '-translate-y-0.5' : 'bg-white hover:-translate-y-px'
+                }`}
+                style={{
+                  borderColor: isSelected ? MINT : `${SLATE}15`,
+                  background: isSelected ? `${MINT}08` : 'white',
+                  boxShadow: isSelected ? `0 4px 16px ${MINT}20` : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if(!isSelected) e.currentTarget.style.borderColor = MINTL;
+                }}
+                onMouseLeave={(e) => {
+                  if(!isSelected) e.currentTarget.style.borderColor = `${SLATE}15`;
+                }}
+              >
                 {plan.popular && (
-                  <span style={{ position: 'absolute', top: 0, right: 0, backgroundColor: isSelected ? '#2563eb' : '#94a3b8', color: 'white', fontSize: '0.7rem', padding: '0.3rem 0.7rem', borderRadius: '0 0.65rem 0 0.65rem', fontWeight: 700 }}>
+                  <span className="absolute top-0 right-0 text-[9px] px-3 py-1 rounded-bl-xl rounded-tr-xl font-black uppercase tracking-wider text-white"
+                    style={{ background: isSelected ? `linear-gradient(135deg, ${MINT}, ${SLATE})` : SLATEL }}>
                     Paling Laris
                   </span>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <h3 style={{ fontSize: '1.1rem', color: '#0f172a', fontWeight: 800 }}>{plan.name}</h3>
-                  <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#2563eb' }}>{plan.price}</span>
+                <div className="flex justify-between items-center mb-1">
+                  <h3 className="text-[1.1rem] font-black m-0" style={{ color: SLATE }}>{plan.name}</h3>
+                  <span className="text-[1.1rem] font-black" style={{ color: MINT }}>{plan.price}</span>
                 </div>
-                <p style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 500 }}>
-                  Aktif selama {plan.duration} &bull; {plan.speed}
+                <p className="text-[0.8rem] font-bold m-0" style={{ color: SLATEL }}>
+                  Aktif {plan.duration} &bull; {plan.speed}
                 </p>
               </div>
             )})
           )}
         </div>
 
-        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
-          <button onClick={handlePayment} type="button" disabled={loading || plans.length === 0 || !selectedPlanId} className="btn btn-primary" style={{ width: '100%', padding: '0.8rem', fontSize: '0.95rem', display: 'flex', gap: '0.5rem', justifyContent: 'center', fontWeight: 700, borderRadius: '0.5rem', backgroundColor: loading || plans.length === 0 || !selectedPlanId ? '#94a3b8' : '#1e40af', border: 'none', boxShadow: '0 4px 10px rgba(30, 64, 175, 0.2)', cursor: loading || plans.length === 0 || !selectedPlanId ? 'not-allowed' : 'pointer' }}>
-            <Wallet size={18} /> Lanjutkan Pembayaran
+        <div className="mt-6 pt-5 border-t" style={{ borderColor: `${SLATE}15` }}>
+          <button 
+            onClick={handlePayment} 
+            type="button" 
+            disabled={loading || plans.length === 0 || !selectedPlanId} 
+            className={`w-full py-3.5 text-sm flex gap-2 justify-center font-bold rounded-xl transition-all border-none ${
+              loading || plans.length === 0 || !selectedPlanId 
+                ? 'cursor-not-allowed shadow-none' 
+                : 'hover:-translate-y-0.5 cursor-pointer group'
+            }`}
+            style={
+              loading || plans.length === 0 || !selectedPlanId
+              ? { background: `${SLATE}15`, color: `${SLATE}50` }
+              : { background: `linear-gradient(135deg, ${MINT}, ${SLATE})`, color: 'white', boxShadow: `0 8px 20px ${MINT}35` }
+            }
+          >
+            <Wallet size={18} className={!(loading || plans.length === 0 || !selectedPlanId) ? "group-hover:scale-110 transition-transform" : ""} /> 
+            Lanjutkan Pembayaran
           </button>
         </div>
       </div>

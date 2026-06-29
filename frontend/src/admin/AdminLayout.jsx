@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Wifi, Hexagon, Lock, LogOut, X, ChevronDown, ChevronRight, Search, Box, Minus, LayoutGrid } from 'lucide-react';
+import { Wifi, Hexagon, Lock, LogOut, X, ChevronDown, ChevronRight, Search, Box, Minus, LayoutGrid, RefreshCw, Menu } from 'lucide-react';
 import WinBoxWindow from './components/WinBoxWindow';
 
 // Import Page Components
@@ -11,7 +11,7 @@ import WifiActiveSessions from './pages/WifiActiveSessions';
 import WifiReporting from './pages/WifiReporting';
 
 const Placeholder = ({ title }) => (
-  <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', backgroundColor: '#fff' }}>
+  <div className="p-5 flex justify-center items-center h-full bg-white">
     <h2>{title} (Under Construction)</h2>
   </div>
 );
@@ -33,6 +33,7 @@ export default function AdminLayout() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState({'Wifi': true});
   
   // MDI Window Manager State
@@ -190,42 +191,75 @@ export default function AdminLayout() {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ width: '100%', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: '#eef2f6', fontFamily: 'Inter, sans-serif' }}>
-        {/* Decorative Background */}
-        <div style={{ position: 'absolute', top: '10%', left: '15%', width: '30vw', height: '30vw', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
-        <div style={{ position: 'absolute', bottom: '10%', right: '15%', width: '40vw', height: '40vw', background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
+      <div className="w-full min-h-[100dvh] flex flex-col items-center justify-start md:justify-center p-4 overflow-y-auto hide-scrollbar font-sans relative max-md:pt-12" style={{ background: '#f5f8fc' }}>
         
-        <div style={{ width: '100%', maxWidth: '400px', padding: '40px', borderRadius: '24px', backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(226, 232, 240, 0.8)', boxShadow: '0 20px 40px rgba(0,0,0,0.06)', zIndex: 1 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-            <div style={{ width: '56px', height: '56px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(37, 99, 235, 0.25)' }}>
-               <Hexagon size={32} fill="#fff" color="#fff" />
+        {/* subtle hex grid */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage:`url("data:image/svg+xml,%3Csvg width='70' height='121' viewBox='0 0 70 121' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M35 0l30.31 17.5v35L35 70 4.69 52.5v-35z' fill='none' stroke='%234a6891' stroke-width='0.8' stroke-opacity='0.08'/%3E%3C/svg%3E")`,
+          backgroundSize:'70px 121px'
+        }}/>
+
+        {/* Decorative Background Glows */}
+        <div className="absolute top-[10%] left-[15%] w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background:`radial-gradient(circle, #7bc4a015 0%, transparent 70%)`, filter:'blur(40px)' }}></div>
+        <div className="absolute bottom-[10%] right-[15%] w-[350px] h-[350px] rounded-full pointer-events-none" style={{ background:`radial-gradient(circle, #607b9e12 0%, transparent 70%)`, filter:'blur(50px)' }}></div>
+        
+        {/* Modal Card - Sized consistently at 360px */}
+        <div className="w-full max-w-[360px] p-8 rounded-3xl bg-white/95 backdrop-blur-md border shadow-[0_12px_40px_rgba(74,104,145,0.12)] z-10 flex flex-col" style={{ borderColor: '#4a689115' }}>
+          
+          <div className="flex flex-col items-center mb-6 text-center">
+            {/* Hexagon icon styled like the brand */}
+            <div className="mx-auto w-14 h-14 mb-4 flex items-center justify-center p-[3px] relative shrink-0" style={{ clipPath: 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)', background:`linear-gradient(135deg, #4a6891, #5aab87)`, filter:`drop-shadow(0 4px 10px #5aab8730)` }}>
+               <div className="w-full h-full flex items-center justify-center bg-white" style={{ clipPath: 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)' }}>
+                  <Hexagon size={22} style={{ color: '#5aab87' }} />
+               </div>
             </div>
-            <h1 style={{ fontSize: '24px', fontWeight: '800', marginTop: '20px', marginBottom: '6px', color: '#0f172a', letterSpacing: '-0.5px' }}>Pioniar Admin</h1>
-            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>Sistem Manajemen Jaringan Pintar</p>
+            
+            <h1 className="text-xl font-black m-0 tracking-tight" style={{ color: '#4a6891' }}>
+              Pioniar <span style={{ color: '#5aab87' }}>Admin</span>
+            </h1>
+            <p className="text-[10px] font-bold mt-1 uppercase tracking-widest" style={{ color: '#607b9e' }}>Sistem Manajemen Jaringan Pintar</p>
           </div>
           
           {error && (
-            <div style={{ padding: '12px 16px', backgroundColor: '#fff1f2', color: '#e11d48', borderRadius: '12px', marginBottom: '24px', fontSize: '13px', fontWeight: '500', border: '1px solid #ffe4e6', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '4px', height: '16px', backgroundColor: '#e11d48', borderRadius: '4px' }}></div>
+            <div className="px-4 py-3 bg-red-50 text-red-600 rounded-xl mb-5 text-[13px] font-bold flex items-center gap-2 shadow-sm">
+              <div className="w-1 h-4 bg-red-600 rounded"></div>
               {error}
             </div>
           )}
           
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Alamat Email / Username</label>
-              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin@pioniar.com" style={{ width: '100%', padding: '12px 16px', border: '1px solid #cbd5e1', borderRadius: '12px', fontSize: '14px', color: '#0f172a', backgroundColor: '#f8fafc', transition: 'all 0.2s ease', outline: 'none' }} required />
+              <label className="block text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#607b9e' }}>Alamat Email / Username</label>
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin@pioniar.com" 
+                className="w-full px-4 py-3 border rounded-xl text-sm font-semibold transition-all outline-none bg-white" 
+                style={{ borderColor: '#4a689120', color: '#4a6891' }}
+                onFocus={(e) => { e.target.style.borderColor = '#5aab87'; e.target.style.boxShadow = `0 0 0 3px #5aab8720`; }}
+                onBlur={(e) => { e.target.style.borderColor = '#4a689120'; e.target.style.boxShadow = 'none'; }}
+                required />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Kata Sandi</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={{ width: '100%', padding: '12px 16px', border: '1px solid #cbd5e1', borderRadius: '12px', fontSize: '14px', color: '#0f172a', backgroundColor: '#f8fafc', transition: 'all 0.2s ease', outline: 'none' }} required />
+              <label className="block text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#607b9e' }}>Kata Sandi</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" 
+                className="w-full px-4 py-3 border rounded-xl text-sm font-semibold transition-all outline-none bg-white" 
+                style={{ borderColor: '#4a689120', color: '#4a6891' }}
+                onFocus={(e) => { e.target.style.borderColor = '#5aab87'; e.target.style.boxShadow = `0 0 0 3px #5aab8720`; }}
+                onBlur={(e) => { e.target.style.borderColor = '#4a689120'; e.target.style.boxShadow = 'none'; }}
+                required />
             </div>
-            <button type="submit" style={{ marginTop: '12px', width: '100%', padding: '14px', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#ffffff', border: 'none', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)', transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+            <button type="submit" className="mt-2 w-full py-3 rounded-xl font-bold text-sm cursor-pointer border-none flex items-center justify-center transition-all hover:-translate-y-0.5"
+              style={{ background: `linear-gradient(135deg, #5aab87, #4a6891)`, color: 'white', boxShadow: `0 6px 16px #5aab8730` }}>
               Masuk ke Workspace
             </button>
-            <button type="button" onClick={() => navigate('/')} style={{ width: '100%', padding: '12px', borderRadius: '12px', cursor: 'pointer', backgroundColor: 'transparent', color: '#64748b', fontWeight: '600', fontSize: '14px', border: 'none', transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.color = '#0f172a'} onMouseOut={e => e.currentTarget.style.color = '#64748b'}>
-              &larr; Kembali ke Halaman Publik
-            </button>
+            
+            <div className="mt-3 text-center">
+              <button type="button" onClick={() => navigate('/')} className="bg-transparent border-none text-[12px] font-bold cursor-pointer transition-colors"
+                style={{ color: '#607b9e' }}
+                onMouseEnter={e => e.target.style.color = '#5aab87'}
+                onMouseLeave={e => e.target.style.color = '#607b9e'}
+              >
+                &larr; Kembali ke Halaman Publik
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -233,31 +267,33 @@ export default function AdminLayout() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', backgroundColor: '#eef2f6', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#0f172a' }}>
+    <div className="flex h-[100dvh] overflow-hidden bg-slate-100 font-sans text-sm text-slate-900 relative">
       
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-[99998] md:hidden backdrop-blur-sm" 
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* SIDEBAR - Premium Light Theme */}
-      <aside style={{ 
-        width: '260px', 
-        background: 'rgba(255, 255, 255, 0.95)', 
-        backdropFilter: 'blur(10px)',
-        borderRight: '1px solid rgba(226, 232, 240, 0.8)', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        zIndex: 9999,
-        boxShadow: '1px 0 15px rgba(0,0,0,0.02)'
-      }}>
+      <aside className={`w-[260px] md:w-[240px] bg-white/95 backdrop-blur-md border-r border-slate-200/80 flex flex-col overflow-y-auto overflow-x-hidden z-[99999] shadow-[1px_0_15px_rgba(0,0,0,0.02)] fixed md:static inset-y-0 left-0 transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         {/* Logo Area */}
-        <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-           <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)' }}>
-             <Hexagon size={20} fill="#fff" color="#fff" />
-           </div>
-           <span style={{ fontWeight: '800', fontSize: '20px', letterSpacing: '-0.5px', color: '#0f172a' }}>Pioniar.</span>
+        <div className="p-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+             <div className="w-8 h-8 flex items-center justify-center">
+               <img src="/logo-icon.png" alt="Pioniar" className="w-full h-full object-contain drop-shadow-sm" />
+             </div>
+             <span className="font-extrabold text-lg tracking-tight text-slate-900">Pioniar.</span>
+          </div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-slate-800">
+            <X size={20} />
+          </button>
         </div>
 
-        <nav style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '8px', paddingLeft: '8px' }}>Menu Navigasi</div>
+        <nav className="px-3 py-2 flex flex-col gap-1">
+          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 pl-2">Menu Navigasi</div>
           {navItems.map((item) => {
             if (item.subItems) {
               const isExpanded = openDropdowns[item.label];
@@ -265,47 +301,26 @@ export default function AdminLayout() {
                 <div key={item.label}>
                   <div 
                     onClick={() => toggleDropdown(item.label)}
-                    style={{
-                      display: 'flex', alignItems: 'center', padding: '12px 16px', cursor: 'pointer',
-                      borderRadius: '10px', color: '#475569', transition: 'all 0.25s ease',
-                      fontWeight: '600'
-                    }}
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#475569'; }}
+                    className="flex items-center px-3 py-2 cursor-pointer rounded-lg text-slate-600 transition-colors font-semibold hover:bg-slate-100 hover:text-slate-900 text-[11px]"
                   >
-                    <div style={{ marginRight: '14px', display: 'flex', alignItems: 'center' }}>{item.icon}</div>
-                    <span style={{ flex: 1, userSelect: 'none' }}>{item.label}</span>
-                    <div style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                      <ChevronDown size={16} />
+                    <div className="mr-2 flex items-center">{item.icon}</div>
+                    <span className="flex-1 select-none">{item.label}</span>
+                    <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}>
+                      <ChevronDown size={14} />
                     </div>
                   </div>
-                  <div style={{ 
-                    overflow: 'hidden', 
-                    transition: 'all 0.3s ease-in-out', 
-                    maxHeight: isExpanded ? '300px' : '0px',
-                    opacity: isExpanded ? 1 : 0
-                  }}>
-                    <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="mt-0.5 flex flex-col gap-0.5">
                       {item.subItems.map(sub => {
-                        const isSubActive = openWindows.some(w => w.id === sub.path && w.zIndex === highestZIndex);
+                        const isActive = openWindows.some(w => w.id === sub.path && w.zIndex === highestZIndex);
                         return (
                           <div 
                             key={sub.path} 
-                            onClick={() => openWindow(sub.path)}
-                            style={{
-                              display: 'block', padding: '10px 16px 10px 46px', cursor: 'pointer',
-                              borderRadius: '10px', fontSize: '13px', userSelect: 'none',
-                              color: isSubActive ? '#0f172a' : '#64748b',
-                              backgroundColor: isSubActive ? '#e2e8f0' : 'transparent', // Premium Grey Active Tab
-                              fontWeight: isSubActive ? '700' : '500',
-                              transition: 'all 0.2s ease',
-                              position: 'relative'
-                            }}
-                            onMouseOver={(e) => { if (!isSubActive) { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#334155'; } }}
-                            onMouseOut={(e) => { if (!isSubActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b'; } }}
+                            onClick={() => { openWindow(sub.path); setIsMobileMenuOpen(false); }}
+                            className={`pl-8 pr-3 py-1.5 cursor-pointer rounded-lg text-[11px] md:text-[11px] text-[13px] font-semibold transition-all flex items-center relative ${isActive ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
                           >
-                            {isSubActive && <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#3b82f6' }}></div>}
-                            {sub.label}
+                            {isActive && <div className="absolute left-2 w-1.5 h-1.5 rounded-full bg-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>}
+                            <span className="select-none flex-1">{sub.label}</span>
                           </div>
                         );
                       })}
@@ -319,19 +334,11 @@ export default function AdminLayout() {
             return (
               <div 
                 key={item.path} 
-                onClick={() => openWindow(item.path)}
-                style={{
-                  display: 'flex', alignItems: 'center', padding: '12px 16px', cursor: item.locked ? 'not-allowed' : 'pointer',
-                  borderRadius: '10px', transition: 'all 0.25s ease', fontWeight: isActive ? '700' : '600', userSelect: 'none',
-                  color: item.locked ? '#cbd5e1' : (isActive ? '#0f172a' : '#475569'),
-                  backgroundColor: isActive ? '#e2e8f0' : 'transparent', // Premium Grey Active Tab
-                  position: 'relative'
-                }}
-                onMouseOver={(e) => { if (!isActive && !item.locked) { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; } }}
-                onMouseOut={(e) => { if (!isActive && !item.locked) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#475569'; } }}
+                onClick={() => { openWindow(item.path); setIsMobileMenuOpen(false); }}
+                className={`flex items-center px-3 py-3 md:py-2 cursor-pointer rounded-lg text-[13px] md:text-[11px] font-semibold transition-colors relative ${isActive ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
               >
-                {isActive && <div style={{ position: 'absolute', left: 0, top: '15%', bottom: '15%', width: '4px', borderTopRightRadius: '4px', borderBottomRightRadius: '4px', backgroundColor: '#3b82f6' }}></div>}
-                <div style={{ marginRight: '14px', display: 'flex', alignItems: 'center', color: isActive ? '#3b82f6' : 'inherit' }}>{item.icon}</div>
+                {isActive && <div className="absolute left-0 top-[20%] bottom-[20%] w-1 rounded-r bg-emerald-500"></div>}
+                <div className={`mr-2 flex items-center ${isActive ? 'text-emerald-500' : 'inherit'}`}>{item.icon}</div>
                 <span>{item.label}</span>
               </div>
             );
@@ -339,52 +346,63 @@ export default function AdminLayout() {
         </nav>
         
         {/* User Profile Area */}
-        <div style={{ marginTop: 'auto', padding: '24px', borderTop: '1px solid rgba(226, 232, 240, 0.6)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#475569' }}>
+        <div className="mt-auto p-4 border-t border-slate-200/60">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-[10px]">
               AD
             </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>Administrator</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Online</div>
+            <div className="flex-1 overflow-hidden">
+              <div className="font-bold text-[11px] text-slate-900 whitespace-nowrap text-ellipsis overflow-hidden">Administrator</div>
+              <div className="text-[9px] text-slate-500 font-semibold">Online</div>
             </div>
           </div>
         </div>
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <main className="flex-1 flex flex-col relative overflow-hidden">
         
         {/* Sleek Top Bar */}
-        <header style={{ 
-          height: '72px', background: 'rgba(255, 255, 255, 0.8)', 
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(226, 232, 240, 0.6)', 
-          display: 'flex', alignItems: 'center', padding: '0 32px', gap: '20px', zIndex: 9998
-        }}>
-          <div style={{ flex: 1 }}>
-            <h1 style={{ margin: 0, fontWeight: '800', fontSize: '20px', color: '#0f172a', letterSpacing: '-0.3px' }}>
-              {openWindows.length > 0 ? `Workspace (${openWindows.length} Aktif)` : 'Dashboard Utama'}
-            </h1>
-            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#64748b' }}>Kelola jaringan Pioniar Anda dengan mudah.</p>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-             <button onClick={autoTileWindows} title="Susun Jendela" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', color: '#334155', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }} onMouseOver={e=>{e.currentTarget.style.boxShadow='0 4px 8px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor='#cbd5e1';}} onMouseOut={e=>{e.currentTarget.style.boxShadow='0 2px 4px rgba(0,0,0,0.02)'; e.currentTarget.style.borderColor='#e2e8f0';}}>
-               <LayoutGrid size={16} /> Susun Layar
+        <header className="h-[56px] md:h-[52px] bg-white flex items-center justify-between px-3 md:px-5 border-b border-slate-200/60 z-[9998] shrink-0">
+          <div className="flex items-center gap-2 md:gap-3 text-[13px] md:text-[13px] text-[14px] font-bold text-slate-700">
+             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-1.5 -ml-1 text-slate-600 hover:bg-slate-100 rounded-lg">
+               <Menu size={22} />
              </button>
              
-             <button onClick={handleLogout} style={{ background: '#fff1f2', border: '1px solid #ffe4e6', borderRadius: '10px', color: '#e11d48', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s ease' }} onMouseOver={e=>{e.currentTarget.style.background='#ffe4e6';}} onMouseOut={e=>{e.currentTarget.style.background='#fff1f2';}}>
-               <LogOut size={16} /> Keluar
+             <div className="flex items-center gap-1.5 md:gap-2 text-slate-500">
+                <LayoutGrid size={15} className="hidden md:block" />
+                <span className="hidden sm:inline">Pioniar OS</span>
+             </div>
+             {openWindows.length > 0 && (
+                <>
+                  <span className="text-slate-300 hidden sm:inline">/</span>
+                  <span className="text-emerald-600 bg-emerald-50 px-2 md:px-2.5 py-0.5 rounded text-[10px] md:text-[11px] font-black tracking-wide border border-emerald-100 whitespace-nowrap">{openWindows.length} Aktif</span>
+                </>
+             )}
+          </div>
+          
+          <div className="flex items-center gap-1 md:gap-2 pr-0 md:pr-1">
+             <button onClick={() => window.dispatchEvent(new Event('app:refresh'))} title="Muat Ulang Data" className="group bg-white border border-slate-200 rounded text-slate-500 cursor-pointer flex items-center justify-center p-1.5 transition-all duration-200 shadow-sm hover:shadow hover:border-emerald-300 hover:text-emerald-600 hover:-translate-y-0.5 active:scale-95 outline-none">
+               <RefreshCw size={14} className="group-active:-rotate-180 transition-transform duration-500" />
+             </button>
+             
+             <button onClick={autoTileWindows} title="Susun Semua Jendela" className="hidden md:flex group bg-white border border-slate-200 rounded text-slate-600 cursor-pointer items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold transition-all duration-200 shadow-sm hover:shadow hover:border-emerald-300 hover:-translate-y-0.5 active:scale-95 outline-none">
+               <LayoutGrid size={14} className="text-emerald-500 transition-transform duration-300 group-hover:scale-110" /> Susun Layar
+             </button>
+             
+             <div className="w-px h-5 bg-slate-200 mx-1"></div>
+             
+             <button onClick={handleLogout} className="group bg-white border border-slate-200 rounded text-rose-500 cursor-pointer flex items-center gap-1.5 px-2 md:px-3 py-1.5 text-[11px] font-bold transition-all duration-200 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm hover:-translate-y-0.5 active:scale-95 outline-none">
+               <LogOut size={14} className="transition-transform duration-300 group-hover:-translate-x-0.5" /> <span className="hidden sm:inline">Keluar</span>
              </button>
           </div>
         </header>
 
         {/* DESKTOP LAYER */}
-        <div ref={desktopRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <div ref={desktopRef} className="flex-1 overflow-hidden relative">
           {/* Subtle Abstract Background Decoration */}
-          <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '50%', height: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
-          <div style={{ position: 'absolute', bottom: '-20%', right: '-10%', width: '60%', height: '60%', background: 'radial-gradient(circle, rgba(16,185,129,0.03) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none' }}></div>
+          <div className="absolute -top-[10%] -left-[10%] w-1/2 h-1/2 bg-[radial-gradient(circle,rgba(59,130,246,0.05)_0%,rgba(255,255,255,0)_70%)] pointer-events-none"></div>
+          <div className="absolute -bottom-[20%] -right-[10%] w-[60%] h-[60%] bg-[radial-gradient(circle,rgba(16,185,129,0.03)_0%,rgba(255,255,255,0)_70%)] pointer-events-none"></div>
           
           {openWindows.map(win => {
             const config = windowRegistry[win.id];
@@ -415,7 +433,7 @@ export default function AdminLayout() {
                 forcedH={win.forcedH}
                 layoutId={win.layoutId}
               >
-                <div style={{ height: '100%', overflow: 'auto', backgroundColor: '#ffffff', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
+                <div className="flex-1 overflow-hidden bg-white text-slate-900 flex flex-col">
                   <Component />
                 </div>
               </WinBoxWindow>

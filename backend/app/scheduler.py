@@ -30,7 +30,8 @@ def run_scheduler_job():
         mt_active_dict = {u['user']: u for u in mt_active if 'user' in u}
         
         try:
-            res = supabase_service.supabase.table('vouchers').select('*').execute()
+            # Optimasi: Hanya tarik voucher yang belum Kadaluarsa untuk mengurangi beban (Full Table Scan prevention)
+            res = supabase_service.supabase.table('vouchers').select('code, plan, first_used_at, expires_at, price, status').neq('status', 'Kadaluarsa').execute()
             sb_vouchers = res.data if res.data is not None else []
         except Exception as e:
             print(f"[Scheduler] Gagal fetch vouchers: {e}")

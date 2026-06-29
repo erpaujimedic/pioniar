@@ -30,6 +30,31 @@ export default function WifiManager() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterPlan, setFilterPlan] = useState('All');
+  const [filterPrinted, setFilterPrinted] = useState('All');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
+  const parseUptime = (str) => {
+    if (!str || str === '0s') return 0;
+    let total = 0;
+    const parts = str.match(/(\d+)([dhms])/g);
+    if (parts) {
+      parts.forEach(p => {
+        const val = parseInt(p);
+        if (p.includes('d')) total += val * 86400;
+        if (p.includes('h')) total += val * 3600;
+        if (p.includes('m')) total += val * 60;
+        if (p.includes('s')) total += val;
+      });
+    }
+    return total;
+  };
 
   const fetchVouchers = () => {
     setLoading(true);
@@ -67,6 +92,10 @@ export default function WifiManager() {
 
   useEffect(() => {
     fetchVouchers();
+    
+    const handleRefresh = () => fetchVouchers();
+    window.addEventListener('app:refresh', handleRefresh);
+    return () => window.removeEventListener('app:refresh', handleRefresh);
   }, []);
 
   // Auto-hide notification
@@ -232,20 +261,30 @@ export default function WifiManager() {
   }, [printData]);
 
   // Pagination & Filtering Logic
+  const uniquePlans = React.useMemo(() => Array.from(new Set(vouchers.map(v => v.plan).filter(Boolean))), [vouchers]);
+
   const filteredVouchers = vouchers.filter(v => {
     // Terapkan filter Tab
     if (activeTab === 'Tersedia') {
       if (v.uptime && v.uptime !== '0s') return false;
       if (v.first_used_at) return false;
       if (v.status === 'Kadaluarsa' || v.status === 'Berjalan') return false;
-      return true;
     } else {
       // Tab Berjalan
-      return v.status === 'Berjalan' || (v.uptime && v.uptime !== '0s' && v.status !== 'Kadaluarsa');
+      if (!(v.status === 'Berjalan' || (v.uptime && v.uptime !== '0s' && v.status !== 'Kadaluarsa'))) return false;
     }
-  }).filter(v => {
+
+    // Terapkan filter Paket Layanan
+    if (filterPlan !== 'All' && v.plan !== filterPlan) return false;
+
+    // Terapkan filter Dicetak
+    if (filterPrinted === 'Printed' && !v.is_printed) return false;
+    if (filterPrinted === 'NotPrinted' && v.is_printed) return false;
+
     // Terapkan filter Search
-    return (v.code || '').toLowerCase().includes(searchTerm.toLowerCase());
+    if (searchTerm && !(v.code || '').toLowerCase().includes(searchTerm.toLowerCase())) return false;
+
+    return true;
   });
 
   // KPI Stats
@@ -259,29 +298,44 @@ export default function WifiManager() {
   const totalBerjalan = vouchers.filter(v => v.status === 'Berjalan' || (v.uptime && v.uptime !== '0s' && v.status !== 'Kadaluarsa')).length;
   
   const totalDicetak = vouchers.filter(v => v.is_printed).length;
+  
+  const sortedVouchers = React.useMemo(() => {
+    let sortableItems = [...filteredVouchers];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aVal = a[sortConfig.key];
+        let bVal = b[sortConfig.key];
+        
+        if (sortConfig.key === 'uptime' || sortConfig.key === 'limit_uptime') {
+          aVal = parseUptime(aVal);
+          bVal = parseUptime(bVal);
+        } else {
+          if (aVal == null) aVal = '';
+          if (bVal == null) bVal = '';
+        }
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredVouchers, sortConfig]);
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentVouchers = filteredVouchers.slice(indexOfFirstItem, indexOfLastItem);
+  const currentVouchers = sortedVouchers.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredVouchers.length / itemsPerPage);
 
   return (
-    <div className="animate-fade-in" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div className="animate-fade-in relative flex flex-col h-full overflow-hidden">
       
       {/* Notifications */}
       {notification && createPortal(
-        <div className="animate-slide-up" style={{
-          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 9999,
-          background: notification.type === 'success' ? '#ffffff' : '#fef2f2',
-          border: `1px solid ${notification.type === 'success' ? '#10b981' : '#f87171'}`,
-          padding: '0.6rem 1rem', borderRadius: '2rem',
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)', 
-          color: notification.type === 'success' ? '#0f172a' : '#991b1b',
-          minWidth: '300px', justifyContent: 'center'
-        }}>
-          {notification.type === 'success' ? <CheckCircle size={16} color="#10b981" /> : <AlertCircle size={16} color="#ef4444" />}
-          <span style={{ fontWeight: 600, fontSize: '0.85rem', flex: 1, textAlign: 'center' }}>{notification.message}</span>
-          <button onClick={() => setNotification(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.2rem', borderRadius: '50%', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+        <div className={`animate-slide-up fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2.5 rounded-full flex items-center justify-center gap-2 shadow-lg min-w-[300px] border ${notification.type === 'success' ? 'bg-white border-emerald-500 text-slate-900' : 'bg-red-50 border-red-400 text-red-800'}`}>
+          {notification.type === 'success' ? <CheckCircle size={16} className="text-emerald-500" /> : <AlertCircle size={16} className="text-red-500" />}
+          <span className="font-semibold text-[13px] flex-1 text-center">{notification.message}</span>
+          <button onClick={() => setNotification(null)} className="bg-transparent border-none text-slate-400 cursor-pointer flex items-center justify-center p-1 rounded-full transition-colors hover:bg-slate-100 hover:text-slate-600">
             <X size={14} />
           </button>
         </div>,
@@ -289,126 +343,159 @@ export default function WifiManager() {
       )}
 
       {/* Voucher Table Section (Premium SaaS Style) */}
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#ffffff', overflow: 'hidden' }}>
+      <div className="flex flex-col flex-1 bg-white overflow-hidden">
         {/* Action Bar */}
-        <div style={{ display: 'flex', gap: '12px', padding: '16px 20px', backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
-          <button onClick={() => setShowModal(true)} style={{ backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#2563eb'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#3b82f6'}>
-            <Plus size={16} /> Generate Baru
-          </button>
+        <div className="flex flex-col xl:flex-row justify-between gap-1.5 px-2 py-1.5 border-b border-slate-100 items-start xl:items-center bg-white/50">
           
-          <button onClick={() => setShowBulkDeleteModal(true)} disabled={selectedVouchers.length === 0} style={{ backgroundColor: '#ffffff', color: '#ef4444', border: '1px solid #fee2e2', padding: '8px 16px', borderRadius: '8px', cursor: selectedVouchers.length === 0 ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '600', opacity: selectedVouchers.length === 0 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }} onMouseOver={e=>{if(selectedVouchers.length>0) e.currentTarget.style.backgroundColor='#fef2f2'}} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}>
-            <Minus size={16} /> Hapus ({selectedVouchers.length})
-          </button>
-          
-          <div style={{ width: '1px', height: '20px', backgroundColor: '#e2e8f0', margin: '0 4px' }}></div>
-          
-          <button 
-            onClick={() => {
-              const toPrint = vouchers.filter(v => selectedVouchers.includes(v.code)).map(v => ({ username: v.code, password: v.code, plan: v.plan }));
-              setPrintData(toPrint);
-              setSelectedVouchers([]);
-            }}
-            disabled={selectedVouchers.length === 0} 
-            style={{ backgroundColor: '#ffffff', color: '#475569', border: '1px solid #e2e8f0', padding: '8px 16px', borderRadius: '8px', cursor: selectedVouchers.length === 0 ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '500', opacity: selectedVouchers.length === 0 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
-            onMouseOver={e=>{if(selectedVouchers.length>0) e.currentTarget.style.backgroundColor='#f8fafc'}} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}
-          >
-            <Printer size={16} /> Print
-          </button>
-          
-          <button 
-            onClick={() => {
-              if (selectedVouchers.length === 1) {
-                const v = vouchers.find(v => v.code === selectedVouchers[0]);
-                if (v) {
-                  setEditData({ id: v.id, username: v.code, password: '', plan: v.plan });
-                  setShowEditModal(true);
+          {/* Left Actions */}
+          <div className="flex items-center flex-wrap gap-1">
+            <button title="Generate Baru" onClick={() => setShowModal(true)} className="bg-emerald-600 text-white border-none w-6 h-6 rounded cursor-pointer flex items-center justify-center transition-all shadow-sm hover:bg-emerald-700">
+              <Plus size={13} strokeWidth={3} />
+            </button>
+            
+            <button title={`Hapus (${selectedVouchers.length})`} onClick={() => setShowBulkDeleteModal(true)} disabled={selectedVouchers.length === 0} className={`bg-transparent border w-6 h-6 rounded flex items-center justify-center transition-all ${selectedVouchers.length === 0 ? 'text-red-300 border-red-100 cursor-not-allowed' : 'text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300 cursor-pointer'}`}>
+              <Trash2 size={12} strokeWidth={2.5} />
+            </button>
+            
+            <div className="hidden sm:block w-px h-3 bg-slate-200 mx-0.5"></div>
+            
+            <button 
+              title="Print Voucher"
+              onClick={() => {
+                const toPrint = vouchers.filter(v => selectedVouchers.includes(v.code)).map(v => ({ username: v.code, password: v.code, plan: v.plan }));
+                setPrintData(toPrint);
+                setSelectedVouchers([]);
+              }}
+              disabled={selectedVouchers.length === 0} 
+              className={`bg-white border w-6 h-6 rounded flex items-center justify-center transition-all ${selectedVouchers.length === 0 ? 'text-slate-300 border-slate-200 cursor-not-allowed' : 'text-slate-600 border-slate-300 hover:bg-slate-50 cursor-pointer shadow-sm'}`}
+            >
+              <Printer size={12} />
+            </button>
+            
+            <button 
+              title="Edit Voucher"
+              onClick={() => {
+                if (selectedVouchers.length === 1) {
+                  const v = vouchers.find(v => v.code === selectedVouchers[0]);
+                  if (v) {
+                    setEditData({ id: v.id, username: v.code, password: '', plan: v.plan });
+                    setShowEditModal(true);
+                  }
                 }
-              }
-            }}
-            disabled={selectedVouchers.length !== 1} 
-            style={{ backgroundColor: '#ffffff', color: '#475569', border: '1px solid #e2e8f0', padding: '8px 16px', borderRadius: '8px', cursor: selectedVouchers.length !== 1 ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '500', opacity: selectedVouchers.length !== 1 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
-            onMouseOver={e=>{if(selectedVouchers.length===1) e.currentTarget.style.backgroundColor='#f8fafc'}} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}
-          >
-            <Edit2 size={16} /> Edit
-          </button>
+              }}
+              disabled={selectedVouchers.length !== 1} 
+              className={`bg-white border w-6 h-6 rounded flex items-center justify-center transition-all ${selectedVouchers.length !== 1 ? 'text-slate-300 border-slate-200 cursor-not-allowed' : 'text-slate-600 border-slate-300 hover:bg-slate-50 cursor-pointer shadow-sm'}`}
+            >
+              <Edit2 size={12} />
+            </button>
+          </div>
 
-          <div style={{ flex: 1 }}></div>
-
-          {/* Filter & Search */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Pill Tabs for Status */}
-            <div style={{ display: 'flex', gap: '4px', padding: '4px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          {/* Right Filters */}
+          <div className="flex items-center gap-1.5 w-full xl:w-auto flex-wrap sm:flex-nowrap">
+            {/* Segmented Control Tabs */}
+            <div className="flex p-0.5 bg-slate-100 rounded border border-slate-200/60 w-full sm:w-auto shadow-inner">
               <button 
                 onClick={() => { setActiveTab('Tersedia'); setCurrentPage(1); }} 
-                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', backgroundColor: activeTab === 'Tersedia' ? '#ffffff' : 'transparent', color: activeTab === 'Tersedia' ? '#0f172a' : '#64748b', fontWeight: activeTab === 'Tersedia' ? '600' : '500', fontSize: '13px', cursor: 'pointer', boxShadow: activeTab === 'Tersedia' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                className={`flex-1 sm:flex-none px-1.5 py-0.5 rounded-sm border-none text-[10px] cursor-pointer transition-all flex items-center justify-center gap-1 ${activeTab === 'Tersedia' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'bg-transparent text-slate-500 font-semibold hover:text-slate-700'}`}
               >
                 Tersedia 
-                <span style={{ backgroundColor: activeTab === 'Tersedia' ? '#f1f5f9' : '#e2e8f0', color: activeTab === 'Tersedia' ? '#0f172a' : '#475569', padding: '2px 6px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+                <span className={`px-1 py-0 rounded-sm text-[8px] font-bold ${activeTab === 'Tersedia' ? 'bg-slate-100 text-slate-700' : 'bg-slate-200/80 text-slate-500'}`}>
                   {totalTersedia}
                 </span>
               </button>
               <button 
                 onClick={() => { setActiveTab('Berjalan'); setCurrentPage(1); }} 
-                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', backgroundColor: activeTab === 'Berjalan' ? '#ffffff' : 'transparent', color: activeTab === 'Berjalan' ? '#0f172a' : '#64748b', fontWeight: activeTab === 'Berjalan' ? '600' : '500', fontSize: '13px', cursor: 'pointer', boxShadow: activeTab === 'Berjalan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                className={`flex-1 sm:flex-none px-1.5 py-0.5 rounded-sm border-none text-[10px] cursor-pointer transition-all flex items-center justify-center gap-1 ${activeTab === 'Berjalan' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'bg-transparent text-slate-500 font-semibold hover:text-slate-700'}`}
               >
                 Berjalan 
-                <span style={{ backgroundColor: activeTab === 'Berjalan' ? '#f1f5f9' : '#e2e8f0', color: activeTab === 'Berjalan' ? '#0f172a' : '#475569', padding: '2px 6px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+                <span className={`px-1 py-0 rounded-sm text-[8px] font-bold ${activeTab === 'Berjalan' ? 'bg-slate-100 text-slate-700' : 'bg-slate-200/80 text-slate-500'}`}>
                   {totalBerjalan}
                 </span>
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', padding: '6px 12px', borderRadius: '8px', transition: 'border-color 0.2s' }}>
-              <Search size={16} color="#64748b" />
-              <input type="text" placeholder="Cari voucher..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} style={{ border: 'none', outline: 'none', padding: '2px 8px', fontSize: '14px', width: '160px', backgroundColor: 'transparent', color: '#0f172a' }} />
-            </div>
+            {/* Filter Paket */}
+            <select 
+              value={filterPlan} 
+              onChange={(e) => { setFilterPlan(e.target.value); setCurrentPage(1); }} 
+              className="border border-slate-200 bg-white px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-600 outline-none shadow-sm cursor-pointer h-6"
+            >
+              <option value="All">Semua Paket</option>
+              {uniquePlans.map(plan => (
+                <option key={plan} value={plan}>{plan}</option>
+              ))}
+            </select>
 
-            <button onClick={handleSync} disabled={isSyncing} title="Sync MikroTik" style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #e2e8f0', padding: '8px', borderRadius: '8px', cursor: isSyncing ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}>
-               {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-            </button>
+            {/* Filter Dicetak */}
+            <select 
+              value={filterPrinted} 
+              onChange={(e) => { setFilterPrinted(e.target.value); setCurrentPage(1); }} 
+              className="border border-slate-200 bg-white px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-600 outline-none shadow-sm cursor-pointer h-6"
+            >
+              <option value="All">Status Print</option>
+              <option value="Printed">Sudah Print</option>
+              <option value="NotPrinted">Belum Print</option>
+            </select>
+
+            <div className="flex-1 sm:flex-none flex items-center border border-slate-200 bg-white px-1.5 py-0.5 rounded transition-all focus-within:border-emerald-500 shadow-sm h-6">
+              <Search size={12} className="text-slate-400 shrink-0" />
+              <input type="text" placeholder="Cari..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="border-none outline-none px-1.5 text-[10px] font-medium w-full sm:w-[80px] bg-transparent text-slate-900 placeholder:text-slate-400" />
+            </div>
           </div>
         </div>
 
         {/* Premium Table */}
-        <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: '0 20px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', marginTop: '8px' }}>
-            <thead style={{ backgroundColor: '#ffffff', position: 'sticky', top: 0, zIndex: 1 }}>
+        <div className="flex-1 overflow-auto bg-white">
+          <table className="w-full min-w-[700px] border-collapse text-[11px] mt-0">
+            <thead className="bg-white sticky top-0 z-10">
               <tr>
-                <th style={{ width: '40px', padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'center' }}>
-                  <input type="checkbox" checked={currentVouchers.length > 0 && selectedVouchers.length === currentVouchers.length} onChange={(e) => { if (e.target.checked) setSelectedVouchers(currentVouchers.map(v => v.code)); else setSelectedVouchers([]); }} style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#3b82f6' }} />
+                <th className="w-8 py-1.5 px-2 text-center border border-slate-200">
+                  <input type="checkbox" checked={currentVouchers.length > 0 && selectedVouchers.length === currentVouchers.length} onChange={(e) => { if (e.target.checked) setSelectedVouchers(currentVouchers.map(v => v.code)); else setSelectedVouchers([]); }} className="cursor-pointer w-3.5 h-3.5 accent-emerald-600 rounded-sm" />
                 </th>
-                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Nama Voucher</th>
-                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Paket Layanan</th>
-                <th style={{ padding: '16px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Status</th>
+                <th className="py-1.5 px-2 text-center font-bold text-slate-400 uppercase tracking-wider text-[9px] border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => handleSort('code')}>Nama Voucher {sortConfig.key === 'code' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+                <th className="py-1.5 px-2 text-center font-bold text-slate-400 uppercase tracking-wider text-[9px] border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => handleSort('plan')}>Paket Layanan {sortConfig.key === 'plan' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+                <th className="py-1.5 px-2 text-center font-bold text-slate-400 uppercase tracking-wider text-[9px] border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => handleSort('uptime')}>Uptime {sortConfig.key === 'uptime' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+                <th className="py-1.5 px-2 text-center font-bold text-slate-400 uppercase tracking-wider text-[9px] border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => handleSort('limit_uptime')}>Limit {sortConfig.key === 'limit_uptime' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+                <th className="py-1.5 px-2 text-center font-bold text-slate-400 uppercase tracking-wider text-[9px] border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => handleSort('is_printed')}>Dicetak {sortConfig.key === 'is_printed' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+                <th className="py-1.5 px-2 text-center font-bold text-slate-400 uppercase tracking-wider text-[9px] border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => handleSort('status')}>Status {sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <Loader2 size={24} className="animate-spin" color="#3b82f6" />
-                      <span>Memuat data...</span>
+                  <td colSpan="7" className="text-center p-6 text-slate-500">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 size={20} className="animate-spin text-emerald-500" />
+                      <span className="font-medium">Memuat data...</span>
                     </div>
                   </td>
                 </tr>
               ) : currentVouchers.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Belum ada data voucher.</td>
+                  <td colSpan="7" className="text-center p-6 text-slate-500 font-medium">Belum ada data voucher.</td>
                 </tr>
               ) : (
                 currentVouchers.map(v => (
-                  <tr key={v.id || v.code} onClick={() => { if (selectedVouchers.includes(v.code)) setSelectedVouchers(selectedVouchers.filter(c => c !== v.code)); else setSelectedVouchers([...selectedVouchers, v.code]); }} style={{ cursor: 'pointer', backgroundColor: selectedVouchers.includes(v.code) ? '#eff6ff' : 'transparent', borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => { if (!selectedVouchers.includes(v.code)) e.currentTarget.style.backgroundColor = '#f8fafc' }} onMouseLeave={e => { if (!selectedVouchers.includes(v.code)) e.currentTarget.style.backgroundColor = 'transparent' }}>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <input type="checkbox" checked={selectedVouchers.includes(v.code)} onChange={(e) => { e.stopPropagation(); if (e.target.checked) setSelectedVouchers([...selectedVouchers, v.code]); else setSelectedVouchers(selectedVouchers.filter(c => c !== v.code)); }} style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#3b82f6' }} />
+                  <tr key={v.id || v.code} onClick={() => { if (selectedVouchers.includes(v.code)) setSelectedVouchers(selectedVouchers.filter(c => c !== v.code)); else setSelectedVouchers([...selectedVouchers, v.code]); }} className={`cursor-pointer transition-all ${selectedVouchers.includes(v.code) ? 'bg-emerald-50/40' : (v.is_printed ? 'bg-emerald-50/40 hover:bg-emerald-100/50' : 'hover:bg-slate-50/80')}`}>
+                    <td className="py-1.5 px-2 text-center border border-slate-200">
+                      <input type="checkbox" checked={selectedVouchers.includes(v.code)} onChange={(e) => { e.stopPropagation(); if (e.target.checked) setSelectedVouchers([...selectedVouchers, v.code]); else setSelectedVouchers(selectedVouchers.filter(c => c !== v.code)); }} className="cursor-pointer w-3.5 h-3.5 accent-emerald-600 rounded-sm" />
                     </td>
-                    <td style={{ padding: '12px', fontWeight: '500', color: '#0f172a' }}>{v.code}</td>
-                    <td style={{ padding: '12px', color: '#475569' }}>
-                      <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '13px' }}>{v.plan}</span>
+                    <td className="py-1.5 px-2 text-center font-bold text-slate-800 border border-slate-200">{v.code}</td>
+                    <td className="py-1.5 px-2 text-center text-slate-600 border border-slate-200">
+                      <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold text-[9px]">{v.plan}</span>
                     </td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: v.status === 'Aktif' ? '#ecfdf5' : '#fffbeb', color: v.status === 'Aktif' ? '#10b981' : '#f59e0b', padding: '4px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '500' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: v.status === 'Aktif' ? '#10b981' : '#f59e0b' }}></div>
+                    <td className="py-1.5 px-2 text-center font-medium text-slate-600 border border-slate-200">{v.uptime || '0s'}</td>
+                    <td className="py-1.5 px-2 text-center text-slate-400 font-medium border border-slate-200">{v.limit_uptime || '-'}</td>
+                    <td className="py-1.5 px-2 text-center border border-slate-200">
+                      {v.is_printed ? (
+                        <CheckCircle size={14} className="inline text-emerald-500 drop-shadow-sm" title="Sudah Dicetak" />
+                      ) : (
+                        <span className="text-[10px] text-slate-300 font-medium">-</span>
+                      )}
+                    </td>
+                    <td className="py-1.5 px-2 text-center border border-slate-200">
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold ${v.status === 'Aktif' || v.status === 'Berjalan' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                        <div className={`w-1 h-1 rounded-full ${v.status === 'Aktif' || v.status === 'Berjalan' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-amber-500 shadow-[0_0_8px_#f59e0b]'}`}></div>
                         {v.status}
                       </span>
                     </td>
@@ -420,128 +507,126 @@ export default function WifiManager() {
         </div>
         
         {/* Pagination Status Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff', fontSize: '14px', color: '#475569' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>Menampilkan {currentVouchers.length > 0 ? `${indexOfFirstItem + 1} - ${Math.min(indexOfLastItem, filteredVouchers.length)} dari ` : ''}<strong>{filteredVouchers.length}</strong> total item</span>
+        <div className="mt-auto flex flex-col sm:flex-row sm:items-center justify-between px-3 py-1.5 border-t border-slate-100 bg-white text-[10px] font-medium text-slate-500 shrink-0 gap-2">
+          <div className="flex items-center gap-1">
+            <span>Menampilkan {currentVouchers.length > 0 ? `${indexOfFirstItem + 1} - ${Math.min(indexOfLastItem, filteredVouchers.length)} dari ` : ''}<strong className="text-slate-800">{filteredVouchers.length}</strong></span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-               <span>Per Halaman:</span>
-               <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc' }}>
+          <div className="flex items-center gap-3 flex-wrap">
+             <div className="flex items-center gap-1.5">
+               <span>Per Hal:</span>
+               <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="py-0.5 px-1.5 border border-slate-200 rounded text-[10px] font-bold outline-none bg-white text-slate-700 cursor-pointer shadow-sm hover:border-slate-300 transition-colors">
                   <option value={50}>50</option>
                   <option value={100}>100</option>
                   <option value={500}>500</option>
                </select>
              </div>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-               <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : '#ffffff', color: currentPage === 1 ? '#cbd5e1' : '#475569', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Sebelumnya</button>
-               <span style={{ fontWeight: '500', color: '#0f172a' }}>{currentPage} / {totalPages || 1}</span>
-               <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} style={{ padding: '4px 8px', border: '1px solid #e2e8f0', backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f8fafc' : '#ffffff', color: currentPage === totalPages || totalPages === 0 ? '#cbd5e1' : '#475569', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}>Selanjutnya</button>
+             <div className="flex items-center gap-1">
+               <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`w-6 h-6 flex items-center justify-center border border-slate-200 rounded transition-colors font-bold ${currentPage === 1 ? 'bg-slate-50 text-slate-300 cursor-not-allowed' : 'bg-white text-slate-600 cursor-pointer hover:bg-slate-100 hover:text-slate-900 shadow-sm'}`}>&lt;</button>
+               <span className="font-bold text-slate-800 px-2">{currentPage} / {totalPages || 1}</span>
+               <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`w-6 h-6 flex items-center justify-center border border-slate-200 rounded transition-colors font-bold ${currentPage === totalPages || totalPages === 0 ? 'bg-slate-50 text-slate-300 cursor-not-allowed' : 'bg-white text-slate-600 cursor-pointer hover:bg-slate-100 hover:text-slate-900 shadow-sm'}`}>&gt;</button>
              </div>
           </div>
         </div>
       </div>
       {/* Generate Voucher Modal (Premium Style) */}
       {showModal && createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
-          <div style={{ width: '100%', maxWidth: '480px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             
             {/* Modal Header */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2.5 font-bold text-base text-slate-900">
+                <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
                   <Plus size={18} />
                 </div>
                 Generate Voucher
               </div>
-              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px', borderRadius: '6px', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#e2e8f0'} onMouseOut={e=>e.currentTarget.style.backgroundColor='transparent'}>
+              <button onClick={() => setShowModal(false)} className="bg-transparent border-none cursor-pointer text-slate-500 p-1 rounded-md transition-colors hover:bg-slate-200">
                 <X size={20} />
               </button>
             </div>
             
             {/* Modal Body */}
-            <div style={{ padding: '24px' }}>
+            <div className="p-6">
               {/* Tabs */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '4px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
+              <div className="flex gap-2 mb-6 p-1 bg-slate-100 rounded-xl">
                 <button 
                   type="button"
                   onClick={() => setGenerateMode('voucher')}
-                  style={{ flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: generateMode === 'voucher' ? '#ffffff' : 'transparent', color: generateMode === 'voucher' ? '#0f172a' : '#64748b', fontWeight: generateMode === 'voucher' ? '700' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: generateMode === 'voucher' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}
+                  className={`flex-1 py-2 px-4 rounded-lg border-none text-sm cursor-pointer transition-all ${generateMode === 'voucher' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'bg-transparent text-slate-500 font-medium hover:bg-slate-200/50'}`}
                 >Voucher</button>
                 <button 
                   type="button"
                   onClick={() => setGenerateMode('member')}
-                  style={{ flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: generateMode === 'member' ? '#ffffff' : 'transparent', color: generateMode === 'member' ? '#0f172a' : '#64748b', fontWeight: generateMode === 'member' ? '700' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: generateMode === 'member' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}
+                  className={`flex-1 py-2 px-4 rounded-lg border-none text-sm cursor-pointer transition-all ${generateMode === 'member' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'bg-transparent text-slate-500 font-medium hover:bg-slate-200/50'}`}
                 >Member</button>
                 <button 
                   type="button"
                   onClick={() => setGenerateMode('bulk')}
-                  style={{ flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: generateMode === 'bulk' ? '#ffffff' : 'transparent', color: generateMode === 'bulk' ? '#0f172a' : '#64748b', fontWeight: generateMode === 'bulk' ? '700' : '500', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: generateMode === 'bulk' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}
+                  className={`flex-1 py-2 px-4 rounded-lg border-none text-sm cursor-pointer transition-all ${generateMode === 'bulk' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'bg-transparent text-slate-500 font-medium hover:bg-slate-200/50'}`}
                 >Bulk</button>
               </div>
               
-              <form onSubmit={handleGenerate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={handleGenerate} className="flex flex-col gap-4">
                 {generateMode === 'voucher' ? (
                   <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Kode Voucher</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kode Voucher</label>
                     <input 
                       type="text" 
                       required={generateMode === 'voucher'}
                       placeholder="Contoh: PION123"
                       value={formData.username}
                       onChange={(e) => setFormData({...formData, username: e.target.value.replace(/\s+/g, '')})}
-                      style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s' }}
-                      onFocus={e=>e.currentTarget.style.borderColor='#3b82f6'}
-                      onBlur={e=>e.currentTarget.style.borderColor='#cbd5e1'}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
-                    <p style={{ fontSize: '12px', color: '#64748b', marginTop: '6px', margin: '6px 0 0 0' }}>*Tanpa spasi. Kode ini berlaku sebagai username & password.</p>
+                    <p className="text-xs text-slate-500 mt-1.5">*Tanpa spasi. Kode ini berlaku sebagai username & password.</p>
                   </div>
                 ) : generateMode === 'member' ? (
                   <>
                     <div>
-                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Username</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Username</label>
                       <input 
                         type="text" 
                         required={generateMode === 'member'}
                         placeholder="Contoh: eepridwan"
                         value={formData.username}
                         onChange={(e) => setFormData({...formData, username: e.target.value.replace(/\s+/g, '')})}
-                        style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Password</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
                       <input 
                         type="text" 
                         required={generateMode === 'member'}
                         placeholder="Password"
                         value={formData.password}
                         onChange={(e) => setFormData({...formData, password: e.target.value.replace(/\s+/g, '')})}
-                        style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
                   </>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Jumlah</label>
-                        <input type="number" min="1" max="500" required value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || ''})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                  <div className="flex flex-col gap-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Jumlah</label>
+                        <input type="number" min="1" max="500" required value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || ''})} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Panjang Kode</label>
-                        <input type="number" min="3" max="12" value={formData.length} onChange={(e) => setFormData({...formData, length: parseInt(e.target.value) || 4})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                      <div className="flex-1">
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Panjang Kode</label>
+                        <input type="number" min="3" max="12" value={formData.length} onChange={(e) => setFormData({...formData, length: parseInt(e.target.value) || 4})} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Awalan (Prefix)</label>
-                        <input type="text" placeholder="Opsional" value={formData.prefix} onChange={(e) => setFormData({...formData, prefix: e.target.value.replace(/\s+/g, '')})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }} />
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Awalan (Prefix)</label>
+                        <input type="text" placeholder="Opsional" value={formData.prefix} onChange={(e) => setFormData({...formData, prefix: e.target.value.replace(/\s+/g, '')})} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Karakter</label>
-                        <select value={formData.char_type} onChange={(e) => setFormData({...formData, char_type: e.target.value})} style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}>
+                      <div className="flex-1">
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Karakter</label>
+                        <select value={formData.char_type} onChange={(e) => setFormData({...formData, char_type: e.target.value})} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white">
                           <option value="numeric">Angka (0-9)</option>
                           <option value="lowercase">Huruf Kecil (a-z)</option>
                           <option value="uppercase">Huruf Besar (A-Z)</option>
@@ -550,36 +635,35 @@ export default function WifiManager() {
                       </div>
                     </div>
 
-                    <div style={{ padding: '12px 16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>Preview Format:</span>
-                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', letterSpacing: '1px' }}>
+                    <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                      <span className="text-[13px] text-slate-500 font-semibold">Preview Format:</span>
+                      <span className="text-sm font-bold text-slate-900 tracking-wide">
                         {formData.prefix}{formData.char_type === 'numeric' ? '123' : formData.char_type === 'uppercase' ? 'ABC' : formData.char_type === 'lowercase' ? 'abc' : 'A1B'}{'x'.repeat(Math.max(0, formData.length - 3))}
                       </span>
                     </div>
                   </div>
                 )}
                 
-                {generateMode !== 'bulk' && (
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Pilih Paket Layanan</label>
-                    <select 
-                      value={formData.plan}
-                      onChange={(e) => setFormData({...formData, plan: e.target.value})}
-                      style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}
-                    >
-                      {profiles.map(p => (
-                        <option key={p.id} value={p.name}>
-                          {p.name === 'default' ? 'Default Plan' : p.name} 
-                          {p.rate_limit ? ` (Limit ${p.rate_limit})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                {/* Package Selection - Available for ALL modes (Voucher, Member, Bulk) */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Pilih Paket Layanan</label>
+                  <select 
+                    value={formData.plan}
+                    onChange={(e) => setFormData({...formData, plan: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white"
+                  >
+                    {profiles.map(p => (
+                      <option key={p.id} value={p.name}>
+                        {p.name === 'default' ? 'Default Plan' : p.name} 
+                        {p.rate_limit ? ` (Limit ${p.rate_limit})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 
-                <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setShowModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={e=>e.currentTarget.style.backgroundColor='#ffffff'}>Batal</button>
-                  <button type="submit" disabled={isGenerating} style={{ padding: '10px 24px', border: 'none', backgroundColor: '#3b82f6', color: '#ffffff', cursor: isGenerating ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isGenerating ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)' }} onMouseOver={e=>{if(!isGenerating) e.currentTarget.style.backgroundColor='#2563eb'}} onMouseOut={e=>{if(!isGenerating) e.currentTarget.style.backgroundColor='#3b82f6'}}>
+                <div className="mt-6 flex gap-3 justify-end">
+                  <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-slate-200 bg-white text-slate-600 cursor-pointer rounded-lg text-sm font-semibold transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={isGenerating} className={`px-6 py-2.5 border-none bg-emerald-500 text-white rounded-lg text-sm font-semibold transition-all shadow-[0_4px_6px_rgba(59,130,246,0.2)] ${isGenerating ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:bg-emerald-600'}`}>
                     {isGenerating ? 'Memproses...' : 'Generate Voucher'}
                   </button>
                 </div>
@@ -592,40 +676,40 @@ export default function WifiManager() {
 
       {/* Edit Modal (Premium Style) */}
       {showEditModal && createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
-          <div style={{ width: '100%', maxWidth: '420px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2.5 font-bold text-base text-slate-900">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
                   <Edit2 size={18} />
                 </div>
                 Edit {editData.username}
               </div>
-              <button onClick={() => setShowEditModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px', borderRadius: '6px', transition: 'all 0.2s' }} onMouseOver={e=>e.currentTarget.style.backgroundColor='#e2e8f0'} onMouseOut={e=>e.currentTarget.style.backgroundColor='transparent'}>
+              <button onClick={() => setShowEditModal(false)} className="bg-transparent border-none cursor-pointer text-slate-500 p-1 rounded-md transition-colors hover:bg-slate-200">
                 <X size={20} />
               </button>
             </div>
             
-            <div style={{ padding: '24px' }}>
-              <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="p-6">
+              <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Password Baru</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password Baru</label>
                   <input 
                     type="text" 
                     placeholder="Kosongkan jika tidak diubah"
                     value={editData.password}
                     onChange={(e) => setEditData({...editData, password: e.target.value})}
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
                 
                 <div>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Ganti Paket</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ganti Paket</label>
                   <select 
                     value={editData.plan}
                     onChange={(e) => setEditData({...editData, plan: e.target.value})}
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm outline-none transition-colors focus:border-amber-500 focus:ring-1 focus:ring-amber-500 bg-white"
                   >
                     {profiles.map(p => (
                       <option key={p.id} value={p.name}>
@@ -635,9 +719,9 @@ export default function WifiManager() {
                   </select>
                 </div>
 
-                <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setShowEditModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
-                  <button type="submit" disabled={isEditing} style={{ padding: '10px 24px', border: 'none', backgroundColor: '#d97706', color: '#ffffff', cursor: isEditing ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isEditing ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(217, 119, 6, 0.2)' }}>
+                <div className="mt-6 flex gap-3 justify-end">
+                  <button type="button" onClick={() => setShowEditModal(false)} className="px-5 py-2.5 border border-slate-200 bg-white text-slate-600 cursor-pointer rounded-lg text-sm font-semibold transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={isEditing} className={`px-6 py-2.5 border-none bg-amber-500 text-white rounded-lg text-sm font-semibold transition-all shadow-[0_4px_6px_rgba(217,119,6,0.2)] ${isEditing ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:bg-amber-600'}`}>
                     {isEditing ? 'Menyimpan...' : 'Simpan Perubahan'}
                   </button>
                 </div>
@@ -650,22 +734,22 @@ export default function WifiManager() {
 
       {/* Delete Confirmation Modal (Premium Style) */}
       {showDeleteModal && deleteData && createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
-          <div style={{ width: '100%', maxWidth: '360px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-[360px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             
-            <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <div className="pt-6 px-6 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-xl bg-red-100 text-red-500 flex items-center justify-center mb-4">
                 <Trash2 size={24} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: '0 0 8px 0' }}>Hapus Pengguna</h3>
-              <p style={{ fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
-                Apakah Anda yakin ingin menghapus <strong>{deleteData.username}</strong>? Tindakan ini tidak dapat dibatalkan.
+              <h3 className="text-lg font-bold text-slate-900 m-0 mb-2">Hapus Pengguna</h3>
+              <p className="text-sm text-slate-500 m-0 leading-relaxed">
+                Apakah Anda yakin ingin menghapus <strong className="text-slate-700">{deleteData.username}</strong>? Tindakan ini tidak dapat dibatalkan.
               </p>
             </div>
             
-            <div style={{ padding: '24px', display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
-              <button type="button" onClick={() => { setShowDeleteModal(false); setDeleteData(null); }} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
-              <button type="button" onClick={confirmDelete} disabled={isDeleting} style={{ flex: 1, padding: '10px', border: 'none', backgroundColor: '#ef4444', color: '#ffffff', cursor: isDeleting ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isDeleting ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(239, 68, 68, 0.2)' }}>
+            <div className="p-6 flex gap-3 justify-center mt-2">
+              <button type="button" onClick={() => { setShowDeleteModal(false); setDeleteData(null); }} className="flex-1 py-2.5 border border-slate-200 bg-white text-slate-600 cursor-pointer rounded-lg text-sm font-semibold transition-colors hover:bg-slate-50">Batal</button>
+              <button type="button" onClick={confirmDelete} disabled={isDeleting} className={`flex-1 py-2.5 border-none bg-red-500 text-white rounded-lg text-sm font-semibold transition-all shadow-[0_4px_6px_rgba(239,68,68,0.2)] ${isDeleting ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:bg-red-600'}`}>
                 {isDeleting ? 'Memproses...' : 'Ya, Hapus'}
               </button>
             </div>
@@ -676,22 +760,22 @@ export default function WifiManager() {
 
       {/* Bulk Delete Modal (Premium Style) */}
       {showBulkDeleteModal && createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}>
-          <div style={{ width: '100%', maxWidth: '360px', backgroundColor: '#ffffff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-[360px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             
-            <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <div className="pt-6 px-6 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-xl bg-red-100 text-red-500 flex items-center justify-center mb-4">
                 <Trash2 size={24} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: '0 0 8px 0' }}>Hapus Masal</h3>
-              <p style={{ fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
-                Hapus <strong>{selectedVouchers.length}</strong> voucher terpilih secara permanen?
+              <h3 className="text-lg font-bold text-slate-900 m-0 mb-2">Hapus Masal</h3>
+              <p className="text-sm text-slate-500 m-0 leading-relaxed">
+                Hapus <strong className="text-slate-700">{selectedVouchers.length}</strong> voucher terpilih secara permanen?
               </p>
             </div>
             
-            <div style={{ padding: '24px', display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
-              <button type="button" onClick={() => setShowBulkDeleteModal(false)} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#475569', cursor: 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}>Batal</button>
-              <button type="button" onClick={handleBulkDelete} disabled={isDeleting} style={{ flex: 1, padding: '10px', border: 'none', backgroundColor: '#ef4444', color: '#ffffff', cursor: isDeleting ? 'not-allowed' : 'pointer', borderRadius: '10px', fontSize: '14px', fontWeight: '600', opacity: isDeleting ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(239, 68, 68, 0.2)' }}>
+            <div className="p-6 flex gap-3 justify-center mt-2">
+              <button type="button" onClick={() => setShowBulkDeleteModal(false)} className="flex-1 py-2.5 border border-slate-200 bg-white text-slate-600 cursor-pointer rounded-lg text-sm font-semibold transition-colors hover:bg-slate-50">Batal</button>
+              <button type="button" onClick={handleBulkDelete} disabled={isDeleting} className={`flex-1 py-2.5 border-none bg-red-500 text-white rounded-lg text-sm font-semibold transition-all shadow-[0_4px_6px_rgba(239,68,68,0.2)] ${isDeleting ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:bg-red-600'}`}>
                 {isDeleting ? 'Memproses...' : 'Ya, Hapus'}
               </button>
             </div>
