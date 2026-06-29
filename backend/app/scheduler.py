@@ -1,6 +1,5 @@
 import re
 from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
 from app.services.mikrotik_service import mikrotik_service
 from app.services.supabase_service import supabase_service
 
@@ -95,16 +94,10 @@ def run_scheduler_job():
     except Exception as e:
         print(f"[Scheduler] Error global: {e}")
 
-# Inisialisasi scheduler
-scheduler = BackgroundScheduler()
-scheduler.add_job(run_scheduler_job, 'interval', minutes=1, id='check_vouchers_job')
-
+# Note: APScheduler has been removed.
+# On Vercel, this function should be triggered via a Cron Job hitting a specific API endpoint.
 def start_scheduler():
-    if not scheduler.running:
-        scheduler.start()
-        print("[Scheduler] APScheduler Background engine started.")
+    pass
 
 def stop_scheduler():
-    if scheduler.running:
-        scheduler.shutdown()
-        print("[Scheduler] APScheduler Background engine stopped.")
+    pass

@@ -46,6 +46,17 @@ def read_root():
     # Redirect root to frontend website so Tripay reviewers can see the actual site
     return RedirectResponse(url="https://pioniar.com")
 
+from app.scheduler import run_scheduler_job
+
+@app.get("/api/cron/sync")
+def run_cron_sync():
+    """Endpoint to be triggered by Vercel Cron every minute"""
+    try:
+        run_scheduler_job()
+        return {"status": "success", "message": "Cron job executed"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 # Register Routers
 app.include_router(wifi.router, prefix="/api/wifi", tags=["Wifi"])
 app.include_router(livestock.router, prefix="/api/livestock", tags=["Livestock"])
