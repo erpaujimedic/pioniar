@@ -22,11 +22,5 @@
       "src": "/(.*)",
       "dest": "/frontend/dist/$1"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/sync",
-      "schedule": "* * * * *"
-    }
   ]
 }
