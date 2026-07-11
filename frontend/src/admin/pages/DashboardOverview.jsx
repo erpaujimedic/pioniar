@@ -357,6 +357,18 @@ export default function DashboardOverview() {
                 </button>
               </div>
               </div>
+              {/* Quick Actions */}
+              <div className="p-4 border border-slate-200 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow mt-4">
+                <h3 className="text-[13px] font-black m-0 mb-3 text-slate-800 uppercase tracking-wide">Pintas (Quick Actions)</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => window.location.href='/admin/wifi?quick=1'} className="px-3 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-[12px] font-bold text-center cursor-pointer hover:bg-emerald-100 transition-colors">
+                    + Generate Voucher
+                  </button>
+                  <button onClick={() => window.location.href='/admin/wifi'} className="px-3 py-2 bg-slate-50 text-slate-600 border border-slate-200 rounded-lg text-[12px] font-bold text-center cursor-pointer hover:bg-slate-100 transition-colors">
+                    Kelola Wifi
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </>

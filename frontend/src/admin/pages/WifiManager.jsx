@@ -93,6 +93,13 @@ export default function WifiManager() {
   useEffect(() => {
     fetchVouchers();
     
+    // Check if quick action triggered
+    if (window.location.search.includes('quick=1')) {
+       setShowModal(true);
+       // Remove the parameter so it doesn't keep opening on refresh
+       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     const handleRefresh = () => fetchVouchers();
     window.addEventListener('app:refresh', handleRefresh);
     return () => window.removeEventListener('app:refresh', handleRefresh);
@@ -105,6 +112,18 @@ export default function WifiManager() {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  // Trigger print dialog when printData is ready
+  useEffect(() => {
+    if (printData && printData.length > 0) {
+      const timer = setTimeout(() => {
+        window.print();
+        // Optional: clear print data after print dialog is closed?
+        // Actually, we can keep it so if they want to print again they can.
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [printData]);
 
   const handleGenerate = async (e) => {
     e.preventDefault();
