@@ -285,7 +285,7 @@ export default function AdminLayout() {
              <div className="w-8 h-8 flex items-center justify-center">
                <img src="/logo-icon.png" alt="Pioniar" className="w-full h-full object-contain drop-shadow-sm" />
              </div>
-             <span className="font-extrabold text-lg tracking-tight text-slate-900">Pioniar.</span>
+             <span className="font-extrabold text-lg tracking-tight text-slate-900">Pioniar</span>
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-slate-800">
             <X size={20} />

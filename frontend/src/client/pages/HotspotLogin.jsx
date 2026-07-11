@@ -95,11 +95,9 @@ export default function HotspotLogin() {
 
       <div className="animate-slide-up w-full max-w-[360px] p-6 md:p-8 rounded-3xl relative z-10 bg-white/95 shadow-[0_12px_40px_rgba(74,104,145,0.12)] border flex flex-col" style={{ borderColor: `${SLATE}15`, backdropFilter: 'blur(20px)' }}>
         
-        {/* Decorative top hex (Moved into normal flow to prevent cutoff) */}
-        <div className="mx-auto w-16 h-16 mb-4 flex items-center justify-center p-[3px] relative shrink-0" style={{ clipPath:HEX, background:`linear-gradient(135deg, ${SLATE}, ${MINT})`, filter:`drop-shadow(0 4px 10px ${MINT}30)` }}>
-           <div className="w-full h-full flex items-center justify-center bg-white" style={{ clipPath:HEX }}>
-              <Wifi size={24} style={{ color: MINT }} />
-           </div>
+        {/* Decorative top logo */}
+        <div className="mx-auto w-16 h-16 mb-4 flex items-center justify-center relative shrink-0">
+           <img src="/logo-icon.png" alt="Pioniar" className="w-full h-full object-contain drop-shadow-[0_4px_10px_rgba(90,171,135,0.3)]" />
         </div>
 
         <div className="text-center mb-6">
