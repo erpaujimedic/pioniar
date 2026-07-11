@@ -30,8 +30,6 @@ app.add_middleware(
         "http://127.0.0.1:5173", 
         "https://pioniar.com", 
         "https://www.pioniar.com",
-        "https://pioniar.web.app",
-        "https://pioniar.firebaseapp.com",
         "*"
     ],
     allow_credentials=True,
