@@ -200,7 +200,44 @@ def bulk_generate_voucher(data: BulkGenerateRequest):
 
 @router.post("/sync")
 def sync_mikrotik():
-    return {"status": "success", "message": "Synced successfully with Mikrotik"}
+    from app.services.supabase_service import supabase_service
+    
+    users = mikrotik_service.get_hotspot_users()
+    if users is None:
+        raise HTTPException(status_code=500, detail="Koneksi ke MikroTik gagal")
+        
+    synced_count = 0
+    for user in users:
+        username = user.get('name')
+        if username == 'admin': continue
+        
+        profile = user.get('profile', 'default')
+        password = user.get('password', username)
+        
+        # Coba insert ke Supabase (jika conflict/duplicate, biarkan saja atau gunakan upsert)
+        # Karena kita tidak punya upsert di SupabaseService, kita coba insert dan abaikan error
+        try:
+            # Asumsikan kalau password == username itu voucher, kalau beda itu member
+            if password == username:
+                supabase_service.supabase.table('vouchers').insert({
+                    "code": username,
+                    "password": password,
+                    "plan": profile,
+                    "status": "Tersedia"
+                }).execute()
+            else:
+                supabase_service.supabase.table('members').insert({
+                    "username": username,
+                    "password": password,
+                    "plan": profile,
+                    "status": "Tersedia"
+                }).execute()
+            synced_count += 1
+        except Exception as e:
+            # Abaikan jika sudah ada (Duplicate)
+            pass
+            
+    return {"status": "success", "message": f"Berhasil sinkronisasi {synced_count} voucher ke database Pioniar"}
 
 @router.get("/monitor")
 def get_live_monitor():

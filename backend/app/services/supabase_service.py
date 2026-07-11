@@ -27,7 +27,6 @@ class SupabaseService:
                 "code": code,
                 "password": password,
                 "plan": plan,
-                "price": price,
                 "status": "Aktif"
             }).execute()
             return True, response.data
@@ -44,7 +43,6 @@ class SupabaseService:
                 "username": username,
                 "password": password,
                 "plan": plan,
-                "price": price,
                 "status": "Aktif"
             }).execute()
             return True, response.data
