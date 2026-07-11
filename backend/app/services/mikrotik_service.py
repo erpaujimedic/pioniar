@@ -9,13 +9,13 @@ import threading
 
 class MikrotikService:
     def __init__(self):
-        self.local_host = os.getenv("MIKROTIK_LOCAL_IP", "192.168.100.1")
-        self.local_port = int(os.getenv("MIKROTIK_LOCAL_PORT", 8728))
-        self.public_host = os.getenv("MIKROTIK_PUBLIC_IP", "id-36.tunnel.web.id")
-        self.public_port = int(os.getenv("MIKROTIK_PUBLIC_PORT", 3693))
+        self.local_host = "192.168.100.1"
+        self.local_port = 8728
+        self.public_host = "id-36.tunnel.web.id"
+        self.public_port = 3693
         
-        self.username = os.getenv("MIKROTIK_USER", "admin")
-        self.password = os.getenv("MIKROTIK_PASSWORD", "Liveforever27*")
+        self.username = "admin"
+        self.password = "Liveforever27*"
         self.pool = None
         self.lock = threading.Lock()
         
