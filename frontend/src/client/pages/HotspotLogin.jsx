@@ -46,14 +46,6 @@ export default function HotspotLogin() {
       const savedSession = localStorage.getItem('hotspot_session');
       if (savedSession) {
         setSession(JSON.parse(savedSession));
-      } else {
-        // Redirect Bounce Method:
-        // Jika tidak ada parameter (artinya user buka manual di browser)
-        // Kita redirect ke status mikroTik untuk cek apakah mereka sbnarnya sudah login
-        const mac = searchParams.get('mac');
-        if (!mac && !error && !status) {
-            window.location.href = 'http://pioniar.wifi/status';
-        }
       }
     }
   }, [searchParams, setSearchParams, navigate]);
@@ -196,13 +188,24 @@ export default function HotspotLogin() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 flex flex-col items-center gap-3">
           <Link to="/portal/buy" className="text-[13px] no-underline font-bold transition-colors inline-block"
              style={{ color: SLATEL }}
              onMouseEnter={(e) => e.target.style.color = MINT}
              onMouseLeave={(e) => e.target.style.color = SLATEL}>
             Belum punya voucher? Beli Online
           </Link>
+          
+          <button 
+            type="button"
+            onClick={() => window.location.href = 'http://pioniar.wifi/status'}
+            className="text-[11px] font-semibold bg-transparent border-none cursor-pointer transition-colors"
+            style={{ color: `${SLATEL}80` }}
+            onMouseEnter={(e) => e.target.style.color = MINT}
+            onMouseLeave={(e) => e.target.style.color = `${SLATEL}80`}
+          >
+            Sudah login? Cek Status (Khusus WiFi Pioniar)
+          </button>
         </div>
       </div>
     </div>
