@@ -3,7 +3,10 @@ from sqlmodel import SQLModel, create_engine, Field, Session
 from datetime import datetime
 from typing import Optional
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'database.db')
+if os.getenv("VERCEL"):
+    DB_PATH = "/tmp/database.db"
+else:
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'database.db')
 sqlite_url = f"sqlite:///{DB_PATH}"
 
 # We use connect_args to allow multiple threads to access SQLite
