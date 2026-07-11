@@ -184,11 +184,11 @@ class MikrotikService:
                     total_hdd_mb = round(total_hdd / 1024 / 1024, 1)
                     hdd_usage = f"{used_hdd_mb} MB"
                 
-                # 3. Traffic Speed (ether2)
+                # 3. Traffic Speed (ether3-Hotspot)
                 speed_mbps = 0
                 try:
                     traffic = api.get_resource('/interface')
-                    res = traffic.call('monitor-traffic', {'interface': 'ether3', 'once': ''})
+                    res = traffic.call('monitor-traffic', {'interface': 'ether3-Hotspot', 'once': ''})
                     if res:
                         tx = int(res[0].get('tx-bits-per-second', 0))
                         rx = int(res[0].get('rx-bits-per-second', 0))
