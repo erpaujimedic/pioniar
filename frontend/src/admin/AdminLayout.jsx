@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Wifi, Hexagon, Lock, LogOut, X, ChevronDown, ChevronRight, Search, Box, Minus, LayoutGrid, RefreshCw, Menu } from 'lucide-react';
+import { Wifi, Hexagon, Lock, LogOut, X, ChevronDown, ChevronRight, Search, Box, Minus, LayoutGrid, RefreshCw, Menu, Eye, EyeOff, Smartphone } from 'lucide-react';
+import { authenticator } from '@otplib/preset-browser';
 import WinBoxWindow from './components/WinBoxWindow';
 
 // Import Page Components
@@ -26,6 +27,8 @@ const windowRegistry = {
   '/admin/snack': { component: () => <Placeholder title="Snack" />, icon: <Lock size={14}/>, title: 'Snack', defaultSize: { w: 600, h: 400 }, initialMaximized: true }
 };
 
+const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'; // Secret for Google Authenticator
+
 export default function AdminLayout() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -35,6 +38,11 @@ export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState({'Wifi': true});
+  
+  // Auth Form State
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginMode, setLoginMode] = useState('password');
+  const [totpCode, setTotpCode] = useState('');
   
   // MDI Window Manager State
   const [openWindows, setOpenWindows] = useState([]);
@@ -58,12 +66,32 @@ export default function AdminLayout() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if ((username === 'eepridwan' || username === 'erpauji.medic@gmail.com') && password === 'Liveforever27*') {
+    const isValidUser = (username === 'eepridwan' || username === 'erpauji.medic@gmail.com');
+    let isSuccess = false;
+    
+    if (loginMode === 'password') {
+      if (isValidUser && password === 'Liveforever27*') {
+        isSuccess = true;
+      }
+    } else if (loginMode === 'totp') {
+      if (isValidUser) {
+        try {
+          // Check 6-digit TOTP
+          if (authenticator.check(totpCode, TOTP_SECRET)) {
+            isSuccess = true;
+          }
+        } catch (err) {
+          console.error("TOTP Error:", err);
+        }
+      }
+    }
+
+    if (isSuccess) {
       setIsAuthenticated(true);
       localStorage.setItem('pioniar_admin_auth', username);
       setError('');
     } else {
-      setError('Akses Ditolak! Kredensial tidak dikenali.');
+      setError('Akses Ditolak! Kredensial atau OTP tidak dikenali.');
     }
   };
 
@@ -228,6 +256,25 @@ export default function AdminLayout() {
           )}
           
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            
+            {/* Login Mode Toggle */}
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              <button 
+                type="button" 
+                onClick={() => setLoginMode('password')}
+                className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all border-none cursor-pointer flex items-center justify-center gap-1.5 ${loginMode === 'password' ? 'bg-white text-slate-800 shadow-sm' : 'bg-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                <Lock size={12} /> Kata Sandi
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setLoginMode('totp')}
+                className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all border-none cursor-pointer flex items-center justify-center gap-1.5 ${loginMode === 'totp' ? 'bg-white text-slate-800 shadow-sm' : 'bg-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                <Smartphone size={12} /> Authenticator
+              </button>
+            </div>
+
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#607b9e' }}>Alamat Email / Username</label>
               <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin@pioniar.com" 
@@ -237,15 +284,36 @@ export default function AdminLayout() {
                 onBlur={(e) => { e.target.style.borderColor = '#4a689120'; e.target.style.boxShadow = 'none'; }}
                 required />
             </div>
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#607b9e' }}>Kata Sandi</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" 
-                className="w-full px-4 py-3 border rounded-xl text-sm font-semibold transition-all outline-none bg-white" 
-                style={{ borderColor: '#4a689120', color: '#4a6891' }}
-                onFocus={(e) => { e.target.style.borderColor = '#5aab87'; e.target.style.boxShadow = `0 0 0 3px #5aab8720`; }}
-                onBlur={(e) => { e.target.style.borderColor = '#4a689120'; e.target.style.boxShadow = 'none'; }}
-                required />
-            </div>
+
+            {loginMode === 'password' ? (
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#607b9e' }}>Kata Sandi</label>
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" 
+                    className="w-full pl-4 pr-10 py-3 border rounded-xl text-sm font-semibold transition-all outline-none bg-white" 
+                    style={{ borderColor: '#4a689120', color: '#4a6891' }}
+                    onFocus={(e) => { e.target.style.borderColor = '#5aab87'; e.target.style.boxShadow = `0 0 0 3px #5aab8720`; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#4a689120'; e.target.style.boxShadow = 'none'; }}
+                    required 
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5aab87] transition-colors border-none bg-transparent cursor-pointer p-0 flex">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#607b9e' }}>Kode 6 Digit (OTP)</label>
+                <input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000000" 
+                  className="w-full px-4 py-3 border rounded-xl text-center text-lg tracking-[0.5em] font-semibold transition-all outline-none bg-white" 
+                  style={{ borderColor: '#4a689120', color: '#4a6891' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#5aab87'; e.target.style.boxShadow = `0 0 0 3px #5aab8720`; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#4a689120'; e.target.style.boxShadow = 'none'; }}
+                  required 
+                />
+              </div>
+            )}
+
             <button type="submit" className="mt-2 w-full py-3 rounded-xl font-bold text-sm cursor-pointer border-none flex items-center justify-center transition-all hover:-translate-y-0.5"
               style={{ background: `linear-gradient(135deg, #5aab87, #4a6891)`, color: 'white', boxShadow: `0 6px 16px #5aab8730` }}>
               Masuk ke Workspace

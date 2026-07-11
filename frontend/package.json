@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@otplib/preset-browser": "^12.0.1",
     "@supabase/supabase-js": "^2.108.2",
     "lucide-react": "^1.18.0",
+    "otplib": "^13.4.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.17.0",
